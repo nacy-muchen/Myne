@@ -47,6 +47,7 @@ private const val MENU_ITEM_SHARE = 1
 private const val MENU_ITEM_WEB = 2
 private const val MENU_ITEM_TRANSLATE = 3
 private const val MENU_ITEM_DICTIONARY = 4
+private const val MENU_ITEM_ADD_TO_NOTE = 5
 
 /**
  * Custom Text ActionMode callback. Used in pair with [MyneSelectionToolbar]. Follow [TextToolbar] for more info.
@@ -58,7 +59,9 @@ private class MyneTextActionModeCallback(
     var onShareRequested: (() -> Unit)? = null,
     var onWebSearchRequested: (() -> Unit)? = null,
     var onTranslateRequested: (() -> Unit)? = null,
-    var onDictionaryRequested: (() -> Unit)? = null
+    var onDictionaryRequested: (() -> Unit)? = null,
+    var onAddToNoteRequested: (() -> Unit)? = null
+
 ) : ActionMode.Callback {
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         requireNotNull(menu)
@@ -89,6 +92,10 @@ private class MyneTextActionModeCallback(
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         }
 
+        onAddToNoteRequested?.let {
+            menu.add(0, MENU_ITEM_ADD_TO_NOTE, 5, context.getString(R.string.add_to_note))
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+        }
         return true
     }
 
@@ -98,6 +105,7 @@ private class MyneTextActionModeCallback(
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         when (item!!.itemId) {
+            MENU_ITEM_ADD_TO_NOTE -> onAddToNoteRequested?.invoke()
             MENU_ITEM_COPY -> onCopyRequested?.invoke()
             MENU_ITEM_SHARE -> onShareRequested?.invoke()
             MENU_ITEM_WEB -> onWebSearchRequested?.invoke()
@@ -157,7 +165,8 @@ private class MyneSelectionToolbar(
     private val onShareRequest: ((String) -> Unit)?,
     private val onWebSearchRequest: ((String) -> Unit)?,
     private val onTranslateRequest: ((String) -> Unit)?,
-    private val onDictionaryRequest: ((String) -> Unit)?
+    private val onDictionaryRequest: ((String) -> Unit)?,
+    private val onAddToNoteRequest: ((String) -> Unit)?
 ) : TextToolbar {
     private var actionMode: ActionMode? = null
     private val callback = MyneTextActionModeCallback(context = context)
@@ -174,6 +183,18 @@ private class MyneSelectionToolbar(
         onCutRequested: (() -> Unit)?,
         onSelectAllRequested: (() -> Unit)?
     ) {
+        callback.onAddToNoteRequested = {
+            val previousClipboard = clipboardManager.primaryClip
+            onCopyRequested?.invoke()
+            val currentClipboard = clipboardManager.text
+            onAddToNoteRequest?.invoke(currentClipboard.toString())
+
+            if (previousClipboard != null) {
+                clipboardManager.setPrimaryClip(previousClipboard)
+            } else {
+                clipboardManager.setPrimaryClip(ClipData.newPlainText(null, " "))
+            }
+        }
         callback.rect = rect
         callback.onCopyRequested = {
             onCopyRequested?.invoke()
@@ -273,6 +294,7 @@ fun MyneSelectionContainer(
     onWebSearchRequested: ((String) -> Unit),
     onTranslateRequested: ((String) -> Unit),
     onDictionaryRequested: ((String) -> Unit),
+    onAddToNoteRequested: ((String) -> Unit)?,
     content: @Composable (toolbarHidden: Boolean) -> Unit
 ) {
     val view = LocalView.current
@@ -297,6 +319,11 @@ fun MyneSelectionContainer(
             },
             onDictionaryRequest = {
                 onDictionaryRequested(it)
+            },
+            onAddToNoteRequest = {
+                if (onAddToNoteRequested != null) {
+                    onAddToNoteRequested(it)
+                }
             }
         )
     }

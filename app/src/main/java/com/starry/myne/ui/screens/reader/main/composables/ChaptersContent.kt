@@ -34,12 +34,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
@@ -49,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.starry.myne.R
@@ -57,6 +63,7 @@ import com.starry.myne.epub.models.EpubChapter
 import com.starry.myne.helpers.toToast
 import com.starry.myne.ui.common.MyneSelectionContainer
 import com.starry.myne.ui.screens.reader.main.viewmodel.ReaderScreenState
+import com.starry.myne.ui.screens.reader.main.viewmodel.ReaderViewModel
 import com.starry.myne.ui.theme.pacificoFont
 
 
@@ -64,8 +71,12 @@ import com.starry.myne.ui.theme.pacificoFont
 fun ChaptersContent(
     state: ReaderScreenState,
     lazyListState: LazyListState,
-    onToggleReaderMenu: () -> Unit
+    onToggleReaderMenu: () -> Unit,
+    viewModel: ReaderViewModel
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedText by remember { mutableStateOf("") }
+    var thoughts by remember { mutableStateOf("") }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = lazyListState
@@ -78,9 +89,47 @@ fun ChaptersContent(
             ChapterLazyItemItem(
                 chapter = chapter,
                 state = state,
-                onClick = onToggleReaderMenu
+                onClick = onToggleReaderMenu,
+                onAddToNoteRequested = { text ->
+                    selectedText = text
+                    showDialog = true
+                }
             )
         }
+    }
+    // AlertDialog 部分
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("添加笔记") },
+            text = {
+                Column {
+                    Text("选中的文本：$selectedText")
+                    TextField(
+                        value = thoughts,
+                        onValueChange = { thoughts = it },
+                        label = { Text("你的感想") }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.addNote(selectedText, thoughts) // 传递选中的文本和感想
+                    showDialog = false // 关闭弹窗
+                    thoughts = "" // 清空感想字段
+                }) {
+                    Text("保存")
+                }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    showDialog = false // 取消操作
+                    thoughts = "" // 清空感想字段
+                }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }
 
@@ -88,7 +137,8 @@ fun ChaptersContent(
 private fun ChapterLazyItemItem(
     chapter: EpubChapter,
     state: ReaderScreenState,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onAddToNoteRequested: (String) -> Unit
 ) {
     val context = LocalContext.current
     val paragraphs = remember { chunkText(chapter.body) }
@@ -175,7 +225,12 @@ private fun ChapterLazyItemItem(
                     context.getString(R.string.no_app_to_handle_content).toToast(context)
                 }
             }
+        },
+        onAddToNoteRequested = { text ->
+            onAddToNoteRequested(text) // 传递选中的文本
         }
+
+
     ) {
         Column(
             modifier = Modifier

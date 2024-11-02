@@ -116,7 +116,8 @@ class ReaderActivity : AppCompatActivity() {
                         ChaptersContent(
                             state = state,
                             lazyListState = lazyListState,
-                            onToggleReaderMenu = { viewModel.toggleReaderMenu() }
+                            onToggleReaderMenu = { viewModel.toggleReaderMenu()},
+                            viewModel=viewModel
                         )
 
                         // Toggle system bars based on reader menu visibility.

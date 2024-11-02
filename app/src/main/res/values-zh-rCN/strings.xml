@@ -93,6 +93,8 @@
     <string name="share">分享</string>
     <string name="translate">翻译</string>
     <string name="dictionary">意义</string>
+    <string name="add_to_note">添加笔记</string>
+
 
     <!-- Settings screen. 设置页面-->
     <string name="settings_header">设置</string>

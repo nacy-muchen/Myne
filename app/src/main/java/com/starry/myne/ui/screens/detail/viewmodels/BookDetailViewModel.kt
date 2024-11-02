@@ -19,14 +19,17 @@ package com.starry.myne.ui.screens.detail.viewmodels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.starry.myne.api.BookAPI
 import com.starry.myne.api.models.Book
 import com.starry.myne.api.models.BookSet
 import com.starry.myne.api.models.ExtraInfo
+import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.database.library.LibraryDao
 import com.starry.myne.database.library.LibraryItem
+import com.starry.myne.database.note.Note
 import com.starry.myne.helpers.Constants
 import com.starry.myne.helpers.PreferenceUtil
 import com.starry.myne.helpers.book.BookDownloader
@@ -34,6 +37,7 @@ import com.starry.myne.helpers.book.BookUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -52,7 +56,8 @@ class BookDetailViewModel @Inject constructor(
     private val bookAPI: BookAPI,
     val libraryDao: LibraryDao,
     val bookDownloader: BookDownloader,
-    private val preferenceUtil: PreferenceUtil
+    private val preferenceUtil: PreferenceUtil,
+    private val noteDao: NoteDAO
 ) : ViewModel() {
     var state by mutableStateOf(BookDetailScreenState())
         private set
@@ -123,5 +128,16 @@ class BookDetailViewModel @Inject constructor(
             createdAt = System.currentTimeMillis()
         )
         libraryDao.insert(libraryItem)
+    }
+
+    fun saveNoteToDatabase(selectedText: String, thoughts: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val note = Note(text = selectedText, thoughts = thoughts)
+            noteDao.insert(note)
+        }
+    }
+
+    fun getAllNotes(): Flow<List<Note>> {
+        return noteDao.getAllNotes()
     }
 }

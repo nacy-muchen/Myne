@@ -22,15 +22,17 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.database.library.LibraryDao
 import com.starry.myne.database.library.LibraryItem
+import com.starry.myne.database.note.Note
 import com.starry.myne.database.progress.ProgressDao
 import com.starry.myne.database.progress.ProgressData
 import com.starry.myne.helpers.Constants
 
 @Database(
-    entities = [LibraryItem::class, ProgressData::class],
-    version = 5,
+    entities = [LibraryItem::class, ProgressData::class, Note::class],
+    version = 6,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -42,11 +44,21 @@ abstract class MyneDatabase : RoomDatabase() {
 
     abstract fun getLibraryDao(): LibraryDao
     abstract fun getReaderDao(): ProgressDao
+    abstract fun noteDao(): NoteDAO
 
     companion object {
 
         private val migration3to4 = Migration(3, 4) { database ->
             database.execSQL("ALTER TABLE reader_table RENAME COLUMN book_id TO library_item_id")
+        }
+        private val migration5to6 = Migration(5, 6) { database ->
+            database.execSQL("""
+        CREATE TABLE IF NOT EXISTS `notes` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            `text` TEXT NOT NULL,
+            `thoughts` TEXT NOT NULL
+        )
+    """.trimIndent())
         }
 
         @Volatile
@@ -63,7 +75,7 @@ abstract class MyneDatabase : RoomDatabase() {
                     context.applicationContext,
                     MyneDatabase::class.java,
                     Constants.DATABASE_NAME
-                ).addMigrations(migration3to4).build()
+                ).addMigrations(migration3to4,migration5to6).build()
                 INSTANCE = instance
                 // return instance
                 instance

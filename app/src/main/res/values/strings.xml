@@ -92,6 +92,7 @@
     <string name="share">Share</string>
     <string name="translate">Translate</string>
     <string name="dictionary">Meaning</string>
+    <string name="add_to_note" >Add To Note</string>
 
     <!-- Settings screen. -->
     <string name="settings_header">Settings</string>

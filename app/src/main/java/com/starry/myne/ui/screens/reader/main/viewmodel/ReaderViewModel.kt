@@ -20,6 +20,8 @@ package com.starry.myne.ui.screens.reader.main.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.starry.myne.database.library.LibraryDao
+import com.starry.myne.database.note.Note
+import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.database.progress.ProgressDao
 import com.starry.myne.database.progress.ProgressData
 import com.starry.myne.epub.EpubParser
@@ -55,6 +57,8 @@ data class ReaderScreenState(
     // Typography
     val fontSize: Int = 100,
     val fontFamily: ReaderFont = ReaderFont.System,
+    val notes: List<Note> = emptyList() // 添加笔记数据
+
 )
 
 @HiltViewModel
@@ -62,7 +66,8 @@ class ReaderViewModel @Inject constructor(
     private val libraryDao: LibraryDao,
     private val progressDao: ProgressDao,
     private val preferenceUtil: PreferenceUtil,
-    private val epubParser: EpubParser
+    private val epubParser: EpubParser,
+    private val noteDao: NoteDAO, // 注入 NoteDao
 ) : ViewModel() {
 
     // Mutable state flow to update the state.
@@ -90,6 +95,16 @@ class ReaderViewModel @Inject constructor(
                     currentChapter = _state.value.chapters[_state.value.currentChapterIndex]
                 )
             }
+        }
+    }
+
+    fun addNote(text: String, thoughts: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val newNote = Note(
+                text = text,
+                thoughts = thoughts
+            )
+            noteDao.insert(newNote) // 将新笔记保存到数据库中
         }
     }
 

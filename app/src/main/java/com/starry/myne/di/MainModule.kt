@@ -20,6 +20,7 @@ package com.starry.myne.di
 import android.content.Context
 import com.starry.myne.api.BookAPI
 import com.starry.myne.database.MyneDatabase
+import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.epub.EpubParser
 import com.starry.myne.helpers.PreferenceUtil
 import com.starry.myne.helpers.book.BookDownloader
@@ -43,7 +44,10 @@ class MainModule {
     @Provides
     fun provideMyneDatabase(@ApplicationContext context: Context) =
         MyneDatabase.getInstance(context)
-
+    @Provides
+    fun provideNoteDAO(database: MyneDatabase): NoteDAO {
+        return database.noteDao()
+    }
     @Provides
     fun provideLibraryDao(myneDatabase: MyneDatabase) = myneDatabase.getLibraryDao()
 
