@@ -1,9 +1,14 @@
 package com.starry.myne.database.note
 import androidx.room.*
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.Flow
+
 
 @Dao
 interface NoteDAO {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(note: Note)
 
@@ -11,5 +16,5 @@ interface NoteDAO {
     fun getAllNotes(): Flow<List<Note>>
 
     @Delete
-    fun delete(note: Note)
+    suspend fun delete(note: Note)
 }
