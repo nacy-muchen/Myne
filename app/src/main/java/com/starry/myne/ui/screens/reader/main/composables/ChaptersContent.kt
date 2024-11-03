@@ -38,9 +38,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.starry.myne.R
@@ -72,11 +76,15 @@ fun ChaptersContent(
     state: ReaderScreenState,
     lazyListState: LazyListState,
     onToggleReaderMenu: () -> Unit,
-    viewModel: ReaderViewModel
+    viewModel: ReaderViewModel,
+    navController: NavController
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var selectedText by remember { mutableStateOf("") }
     var thoughts by remember { mutableStateOf("") }
+    val snackBarHostState = remember { SnackbarHostState() }
+    var showSnackbar by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = lazyListState
@@ -114,11 +122,11 @@ fun ChaptersContent(
             },
             confirmButton = {
                 Button(onClick = {
-                    viewModel.addNote(selectedText, thoughts) // 传递选中的文本和感想
+                    navController.navigate("note_edit/${Uri.encode(selectedText)}/${Uri.encode(thoughts)}")
                     showDialog = false // 关闭弹窗
                     thoughts = "" // 清空感想字段
                 }) {
-                    Text("保存")
+                    Text("编辑")
                 }
             },
             dismissButton = {
@@ -131,6 +139,15 @@ fun ChaptersContent(
             }
         )
     }
+    // 显示 Snackbar 提示
+    if (showSnackbar) {
+        LaunchedEffect(showSnackbar) {
+            snackBarHostState.showSnackbar("保存成功") // 显示提示
+            showSnackbar = false // 重置Snackbar状态
+        }
+    }
+    // 显示 Snackbar
+    SnackbarHost(hostState = snackBarHostState)
 }
 
 @Composable

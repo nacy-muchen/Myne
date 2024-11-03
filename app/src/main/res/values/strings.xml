@@ -163,4 +163,5 @@
 
     <!-- Open source libraries screen -->
     <string name="open_source_licenses_header">Licenses</string>
+    <string name="navigation_notes">Notes</string>
 </resources>

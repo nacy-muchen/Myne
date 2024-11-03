@@ -105,6 +105,7 @@ private fun BottomBar(navController: NavHostController) {
         BottomBarScreen.Categories,
         BottomBarScreen.Library,
         BottomBarScreen.Settings,
+        BottomBarScreen.Notes
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

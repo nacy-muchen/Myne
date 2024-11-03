@@ -24,20 +24,27 @@ import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.starry.myne.R
 import com.starry.myne.helpers.Constants
 import com.starry.myne.helpers.toToast
+import com.starry.myne.ui.screens.note.NoteEditScreen
 import com.starry.myne.ui.screens.reader.main.composables.ChaptersContent
 import com.starry.myne.ui.screens.reader.main.composables.ReaderScreen
 import com.starry.myne.ui.screens.reader.main.viewmodel.ReaderViewModel
@@ -46,6 +53,7 @@ import com.starry.myne.ui.theme.MyneTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.FileInputStream
+
 
 @AndroidEntryPoint
 class ReaderActivity : AppCompatActivity() {
@@ -64,6 +72,7 @@ class ReaderActivity : AppCompatActivity() {
         // Set UI contents.
         setContent {
             MyneTheme(settingsViewModel = settingsViewModel) {
+                val navController = rememberNavController() // 添加 NavController
                 val lazyListState = rememberLazyListState()
                 val coroutineScope = rememberCoroutineScope()
                 // Handle intent and load epub book.
@@ -82,53 +91,71 @@ class ReaderActivity : AppCompatActivity() {
                         })
                 }
 
-                ReaderScreen(
-                    viewModel = viewModel,
-                    onScrollToChapter = { lazyListState.scrollToItem(it) },
-                    chaptersContent = {
-                        LaunchedEffect(lazyListState) {
-                            snapshotFlow {
-                                lazyListState.firstVisibleItemScrollOffset
-                            }.collect { visibleChapterOffset ->
-                                // Get the currently visible chapter index.
-                                val visibleChapterIdx = lazyListState.firstVisibleItemIndex
-                                // Set currently visible chapter & index.
-                                viewModel.setVisibleChapterIndex(visibleChapterIdx)
-                                viewModel.setChapterScrollPercent(
-                                    calculateChapterPercentage(lazyListState)
+
+                // 设置 NavHost
+                NavHost(navController = navController, startDestination = "reader_screen") {
+                    composable("reader_screen") {
+                        ReaderScreen(
+                            viewModel = viewModel,
+                            onScrollToChapter = { lazyListState.scrollToItem(it) },
+                            chaptersContent = {
+                                LaunchedEffect(lazyListState) {
+                                    snapshotFlow {
+                                        lazyListState.firstVisibleItemScrollOffset
+                                    }.collect { visibleChapterOffset ->
+                                        val visibleChapterIdx = lazyListState.firstVisibleItemIndex
+                                        viewModel.setVisibleChapterIndex(visibleChapterIdx)
+                                        viewModel.setChapterScrollPercent(
+                                            calculateChapterPercentage(lazyListState)
+                                        )
+                                        if (!intentData.isExternalFile) {
+                                            viewModel.updateReaderProgress(
+                                                libraryItemId = intentData.libraryItemId!!,
+                                                chapterIndex = visibleChapterIdx,
+                                                chapterOffset = visibleChapterOffset
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // 渲染章节内容
+                                val state = viewModel.state.collectAsState().value
+                                ChaptersContent(
+                                    state = state,
+                                    lazyListState = lazyListState,
+                                    onToggleReaderMenu = { viewModel.toggleReaderMenu() },
+                                    viewModel = viewModel,
+                                    navController = navController // 传递 NavController
                                 )
-                                // If book was not opened from external epub file, update the
-                                // reading progress into the database.
-                                if (!intentData.isExternalFile) {
-                                    viewModel.updateReaderProgress(
-                                        // Book ID is not null here since we are not opening
-                                        // an external book.
-                                        libraryItemId = intentData.libraryItemId!!,
-                                        chapterIndex = visibleChapterIdx,
-                                        chapterOffset = visibleChapterOffset
-                                    )
+
+                                LaunchedEffect(state.showReaderMenu) {
+                                    toggleSystemBars(state.showReaderMenu)
                                 }
                             }
-                        }
-
-                        // Reader content lazy column.
-                        val state = viewModel.state.collectAsState().value
-                        ChaptersContent(
-                            state = state,
-                            lazyListState = lazyListState,
-                            onToggleReaderMenu = { viewModel.toggleReaderMenu()},
-                            viewModel=viewModel
                         )
+                    }
 
-                        // Toggle system bars based on reader menu visibility.
-                        LaunchedEffect(state.showReaderMenu) {
-                            toggleSystemBars(state.showReaderMenu)
-                        }
-                    })
+                    // 新的 Note 编辑页面
+                    composable(
+                        "note_edit/{selectedText}/{thoughts}",
+                        arguments = listOf(
+                            navArgument("selectedText") { type = NavType.StringType },
+                            navArgument("thoughts") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val selectedText = backStackEntry.arguments?.getString("selectedText") ?: ""
+                        val thoughts = backStackEntry.arguments?.getString("thoughts") ?: ""
+
+                        NoteEditScreen(
+                            navController = navController,
+                            selectedText = selectedText,
+                            initialThoughts = thoughts
+                        )
+                    }
+                }
             }
         }
     }
-
 
     private fun setupWindowInsets() {
         // Fullscreen mode that ignores any cutout, notch etc.
@@ -272,4 +299,5 @@ fun calculateChapterPercentage(lazyListState: LazyListState): Float {
         ((1f - visiblePortion / firstVisibleItem.size.toFloat())).coerceIn(0f, 1f)
     }
 }
+
 

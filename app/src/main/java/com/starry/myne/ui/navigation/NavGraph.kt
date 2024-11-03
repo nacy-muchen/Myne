@@ -31,6 +31,7 @@ import com.starry.myne.ui.screens.categories.composables.CategoryDetailScreen
 import com.starry.myne.ui.screens.detail.composables.BookDetailScreen
 import com.starry.myne.ui.screens.home.composables.HomeScreen
 import com.starry.myne.ui.screens.library.composables.LibraryScreen
+import com.starry.myne.ui.screens.notelist.NoteListScreen
 import com.starry.myne.ui.screens.reader.detail.ReaderDetailScreen
 import com.starry.myne.ui.screens.settings.composables.AboutScreen
 import com.starry.myne.ui.screens.settings.composables.OSLScreen
@@ -199,5 +200,27 @@ fun NavGraph(
         ) {
             AboutScreen(navController = navController)
         }
+
+
+
+        composable( route = BottomBarScreen.Notes.route,
+            enterTransition = { bottomNavEnter() },
+            exitTransition = {
+                if (initialState.destination.route == Screens.NoteListScreen.route
+                ) {
+                    exitTransition()
+                } else bottomNavExit()
+            },
+            popEnterTransition = {
+                if (initialState.destination.route == Screens.NoteListScreen.route
+                ) {
+                    popEnterTransition()
+                } else bottomNavPopEnter()
+            },
+            popExitTransition = { bottomNavPopExit() }
+        ) {
+            NoteListScreen(navController)
+        }
+
     }
 }

@@ -46,4 +46,11 @@ sealed class BottomBarScreen(
         title = R.string.navigation_settings,
         icon = R.drawable.ic_nav_settings
     )
+
+    // Add the Notes screen option here
+    data object Notes : BottomBarScreen(
+        route = "notes",
+        title = R.string.navigation_notes,  // Ensure this string resource exists
+        icon = R.drawable.ic_nav_note  // Ensure you have an icon for notes
+    )
 }
