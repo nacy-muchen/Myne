@@ -1,15 +1,6 @@
-package com.starry.myne.ui.screens.notelist
+package com.starry.myne.ui.screens.note
 
-import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,37 +18,27 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.IconButton
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -66,49 +47,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.psoffritti.taptargetcompose.TapTargetCoordinator
-import com.psoffritti.taptargetcompose.TapTargetStyle
-import com.psoffritti.taptargetcompose.TextDefinition
-import com.starry.myne.BuildConfig
-import com.starry.myne.MainActivity
-import com.starry.myne.NoteViewModel
 import com.starry.myne.R
-import com.starry.myne.database.library.LibraryItem
 import com.starry.myne.database.note.Note
-import com.starry.myne.helpers.Constants
-import com.starry.myne.helpers.book.BookUtils
-import com.starry.myne.helpers.getActivity
-import com.starry.myne.helpers.isScrollingUp
-import com.starry.myne.helpers.weakHapticFeedback
-import com.starry.myne.ui.common.CustomTopAppBar
-import com.starry.myne.ui.common.NoBooksAvailable
-import com.starry.myne.ui.navigation.Screens
-import com.starry.myne.ui.screens.library.viewmodels.LibraryViewModel
-import com.starry.myne.ui.screens.main.bottomNavPadding
-import com.starry.myne.ui.screens.settings.viewmodels.SettingsViewModel
-import com.starry.myne.ui.screens.settings.viewmodels.ThemeMode
-import com.starry.myne.ui.theme.poppinsFont
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,42 +69,73 @@ fun NoteListScreen(navController: NavController) {
     val context = LocalContext.current
     val viewModel: NoteViewModel = hiltViewModel()
 
-    val notes by viewModel.allNotes.observeAsState(emptyList())
+    val notes = viewModel.allNotes.observeAsState(listOf()).value
     val snackBarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
+    val dialogState = remember { mutableStateOf(false) }
+    val titleInput = remember { mutableStateOf("") }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("我的笔记") },
+                title = { Text("My Note") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         },
         floatingActionButton = {
-            AnimatedVisibility(
-                visible = lazyListState.isScrollingUp(),
-                enter = slideInVertically { 40 } + fadeIn(),
-                exit = fadeOut(animationSpec = keyframes { durationMillis = 120 })
+            FloatingActionButton(
+                onClick = { dialogState.value = true },
+                modifier = Modifier
+                    .offset(y = (-48).dp)
+                    .padding(bottom = 16.dp)
             ) {
-                FloatingActionButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.addNote("", "")
-                            snackBarHostState.showSnackbar("新建了一个空笔记")
-                        }
-                    }
-                ) {
-                    Icon(Icons.Outlined.Add, contentDescription = "新建笔记")
-                }
+                Icon(Icons.Outlined.Add, contentDescription = "新建笔记")
             }
         }
     ) { paddingValues ->
+        // 显示创建笔记的对话框
+        if (dialogState.value) {
+            AlertDialog(
+                onDismissRequest = { dialogState.value = false },
+                title = { Text("新建笔记") },
+                text = {
+                    TextField(
+                        value = titleInput.value,
+                        onValueChange = { titleInput.value = it },
+                        label = { Text("标题") }
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (titleInput.value.isNotEmpty()) {
+                            val title = titleInput.value
+                            coroutineScope.launch {
+                                viewModel.addNote(title = title, text = "", thoughts = "")
+                                snackBarHostState.showSnackbar("新建了一个空笔记")
+                            }
+                            dialogState.value = false
+                            titleInput.value = "" // 重置输入框
+                        }
+                    }) {
+                        Text("确定")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        dialogState.value = false
+                        titleInput.value = "" // 重置输入框
+                    }) {
+                        Text("取消")
+                    }
+                }
+            )
+        }
         NoteListContent(
             notes = notes,
             snackBarHostState = snackBarHostState,
@@ -163,6 +146,9 @@ fun NoteListScreen(navController: NavController) {
                     viewModel.deleteNote(note)
                     snackBarHostState.showSnackbar("笔记已删除")
                 }
+            },
+            onNoteClick = { note ->
+                navController.navigate("note_edit/${note.id}")
             }
         )
     }
@@ -174,7 +160,8 @@ private fun NoteListContent(
     snackBarHostState: SnackbarHostState,
     lazyListState: LazyListState,
     paddingValues: PaddingValues,
-    onDeleteClick: (Note) -> Unit
+    onDeleteClick: (Note) -> Unit,
+    onNoteClick: (Note) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -194,21 +181,23 @@ private fun NoteListContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background),
-                state = lazyListState
+                state = lazyListState,
+                contentPadding = PaddingValues(bottom = 72.dp)
             ) {
                 items(
                     count = notes.size,
                     key = { i -> notes[i].id }
                 ) { i ->
-                    val note = notes[i]
+                    val note: Note = notes[i]
                     SwipeableNoteItem(
                         note = note,
                         onDeleteClick = { onDeleteClick(note) },
                         onDetailClick = {
-                            // 可选：导航到查看笔记详情的界面
+                            onNoteClick(note)
                         }
                     )
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
+
                 }
             }
         }
@@ -234,6 +223,20 @@ private fun SwipeableNoteItem(
     ) {
         NoteCard(note = note, onDetailClick = onDetailClick)
     }
+}
+
+
+@Composable
+fun NoteListItem(note: Note, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(note.text) },
+        supportingContent = { Text(note.thoughts) },
+        modifier = Modifier
+            .clickable { onClick() }
+            .fillMaxWidth()
+            .padding(8.dp)
+    )
+    Divider()
 }
 
 @Composable
@@ -264,7 +267,7 @@ private fun NoteCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = note.text.take(1).uppercase(),
+                    text = if (note.title.isEmpty()) "无标题" else note.title.take(1).uppercase(),
                     fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
@@ -274,7 +277,7 @@ private fun NoteCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = note.text.ifEmpty { "空标题" },
+                    text = note.title.ifEmpty { "空标题" },
                     style = MaterialTheme.typography.titleMedium,
                     fontSize = 18.sp,
                     maxLines = 1,
@@ -293,6 +296,17 @@ private fun NoteCard(
     }
 }
 
+@Preview
+@Composable
+fun NoteCardPreview() {
+    NoteCard(
+        Note(
+            title = "c1",
+            text = "",
+            thoughts = ""
+        )
+    ) { }
+}
 //    val showImportDialog = remember { mutableStateOf(false) }
 //    val importBookLauncher =
 //        rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->

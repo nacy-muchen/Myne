@@ -130,9 +130,9 @@ class BookDetailViewModel @Inject constructor(
         libraryDao.insert(libraryItem)
     }
 
-    fun saveNoteToDatabase(selectedText: String, thoughts: String) {
+    fun saveNoteToDatabase(title:String, selectedText: String, thoughts: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val note = Note(text = selectedText, thoughts = thoughts)
+            val note = Note(title=title,text = selectedText, thoughts = thoughts)
             noteDao.insert(note)
         }
     }

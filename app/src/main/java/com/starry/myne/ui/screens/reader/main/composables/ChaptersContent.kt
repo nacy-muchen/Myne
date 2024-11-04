@@ -23,6 +23,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -41,10 +42,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,10 +60,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.starry.myne.ui.screens.note.NoteViewModel
 import com.starry.myne.R
 import com.starry.myne.epub.BookTextMapper
 import com.starry.myne.epub.models.EpubChapter
@@ -77,13 +81,19 @@ fun ChaptersContent(
     lazyListState: LazyListState,
     onToggleReaderMenu: () -> Unit,
     viewModel: ReaderViewModel,
-    navController: NavController
+    navController: NavController,
+    noteViewModel: NoteViewModel
 ) {
+    val viewModel:NoteViewModel = hiltViewModel()
     var showDialog by remember { mutableStateOf(false) }
     var selectedText by remember { mutableStateOf("") }
     var thoughts by remember { mutableStateOf("") }
     val snackBarHostState = remember { SnackbarHostState() }
     var showSnackbar by remember { mutableStateOf(false) }
+    var showNoteSelectionDialog by remember { mutableStateOf(false) }
+    val notes by noteViewModel.allNotes.observeAsState(emptyList())
+    var selectedNoteId by remember { mutableStateOf("") }
+
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -95,6 +105,7 @@ fun ChaptersContent(
         ) { index ->
             val chapter = state.chapters[index]
             ChapterLazyItemItem(
+                viewModel = viewModel,
                 chapter = chapter,
                 state = state,
                 onClick = onToggleReaderMenu,
@@ -105,28 +116,42 @@ fun ChaptersContent(
             )
         }
     }
+
     // AlertDialog 部分
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("添加笔记") },
+            title = { Text("Choose A Note") },
             text = {
                 Column {
-                    Text("选中的文本：$selectedText")
+                    Text("Selected Text：$selectedText")
                     TextField(
                         value = thoughts,
                         onValueChange = { thoughts = it },
-                        label = { Text("你的感想") }
+                        label = { Text("Your Thought") }
                     )
+                    notes.forEach { note ->
+                        Button(onClick = {
+                            selectedNoteId = note.id.toString() // 记录选择的笔记
+                            // 这里可以弹出一个 TextField 让用户输入感想
+                            thoughts = "" // 清空感想字段
+                        }) {
+                            Text(note.title) // 显示笔记标题
+                        }
+                    }
                 }
             },
             confirmButton = {
                 Button(onClick = {
-                    navController.navigate("note_edit/${Uri.encode(selectedText)}/${Uri.encode(thoughts)}")
-                    showDialog = false // 关闭弹窗
-                    thoughts = "" // 清空感想字段
+                    if (selectedNoteId.isNotEmpty()) {
+                        // 保存选中的文本和感想到笔记
+                        //noteViewModel.addTextToExistingNote()
+                        noteViewModel.addThoughtToExistingNote(selectedNoteId.toLong(), thoughts)
+                        showDialog = false // 关闭对话框
+                        thoughts = "" // 清空感想字段
+                    }
                 }) {
-                    Text("编辑")
+                    Text("Save")
                 }
             },
             dismissButton = {
@@ -134,15 +159,47 @@ fun ChaptersContent(
                     showDialog = false // 取消操作
                     thoughts = "" // 清空感想字段
                 }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             }
         )
     }
+
+    if (showNoteSelectionDialog) {
+        AlertDialog(
+            onDismissRequest = { showNoteSelectionDialog = false },
+            title = { Text("选择保存到的笔记") },
+            text = {
+                Column {
+                    notes.forEach { note ->
+                        Text(
+                            text = note.text,
+                            modifier = Modifier
+                                .clickable {
+                                    // 将选中的文本和感想保存到选中的笔记中
+                                    noteViewModel.addTextToExistingNote(note, selectedText)
+                                    showNoteSelectionDialog = false // 关闭选择对话框
+                                    thoughts = "" // 清空感想字段
+                                }
+                                .padding(8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showNoteSelectionDialog = false
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     // 显示 Snackbar 提示
     if (showSnackbar) {
         LaunchedEffect(showSnackbar) {
-            snackBarHostState.showSnackbar("保存成功") // 显示提示
+            snackBarHostState.showSnackbar("save successfully") // 显示提示
             showSnackbar = false // 重置Snackbar状态
         }
     }
@@ -152,6 +209,7 @@ fun ChaptersContent(
 
 @Composable
 private fun ChapterLazyItemItem(
+    viewModel: NoteViewModel,
     chapter: EpubChapter,
     state: ReaderScreenState,
     onClick: () -> Unit,

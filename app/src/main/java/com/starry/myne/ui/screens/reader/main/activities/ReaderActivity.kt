@@ -24,23 +24,19 @@ import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.starry.myne.ui.screens.note.NoteViewModel
 import com.starry.myne.R
 import com.starry.myne.helpers.Constants
 import com.starry.myne.helpers.toToast
@@ -60,7 +56,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private lateinit var settingsViewModel: SettingsViewModel
     private val viewModel: ReaderViewModel by viewModels()
-
+    private val noteViewModel: NoteViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -125,7 +121,8 @@ class ReaderActivity : AppCompatActivity() {
                                     lazyListState = lazyListState,
                                     onToggleReaderMenu = { viewModel.toggleReaderMenu() },
                                     viewModel = viewModel,
-                                    navController = navController // 传递 NavController
+                                    navController = navController,
+                                    noteViewModel = noteViewModel
                                 )
 
                                 LaunchedEffect(state.showReaderMenu) {
@@ -148,8 +145,7 @@ class ReaderActivity : AppCompatActivity() {
 
                         NoteEditScreen(
                             navController = navController,
-                            selectedText = selectedText,
-                            initialThoughts = thoughts
+                             initialThoughts = thoughts
                         )
                     }
                 }

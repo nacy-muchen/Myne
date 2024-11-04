@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 5,
-    "identityHash": "7713b0964053f30656eb6578cd4e7f57",
+    "version": 7,
+    "identityHash": "ae6560a295fab1fb7ed89a8b6711c718",
     "entities": [
       {
         "tableName": "book_library",
@@ -108,7 +108,7 @@
       },
       {
         "tableName": "notes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `text` TEXT NOT NULL, `thoughts` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL DEFAULT '', `text` TEXT NOT NULL, `thoughts` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -120,7 +120,8 @@
             "fieldPath": "title",
             "columnName": "title",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "''"
           },
           {
             "fieldPath": "text",
@@ -148,7 +149,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7713b0964053f30656eb6578cd4e7f57')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ae6560a295fab1fb7ed89a8b6711c718')"
     ]
   }
 }

@@ -32,7 +32,7 @@ import com.starry.myne.helpers.Constants
 
 @Database(
     entities = [LibraryItem::class, ProgressData::class, Note::class],
-    version = 6,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -51,10 +51,11 @@ abstract class MyneDatabase : RoomDatabase() {
         private val migration3to4 = Migration(3, 4) { database ->
             database.execSQL("ALTER TABLE reader_table RENAME COLUMN book_id TO library_item_id")
         }
-        private val migration5to6 = Migration(5, 6) { database ->
+        private val migration5to6 = Migration(4, 5) { database ->
             database.execSQL("""
         CREATE TABLE IF NOT EXISTS `notes` (
             `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            'title' TEXT NOT NULL,
             `text` TEXT NOT NULL,
             `thoughts` TEXT NOT NULL
         )
