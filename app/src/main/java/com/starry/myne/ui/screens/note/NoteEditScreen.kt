@@ -36,7 +36,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
-
+/**
+ * Composable function to edit an existing note or create a new one.
+ *
+ * @param navController A controller for navigating between screens.
+ * @param noteId The ID of the note to be edited. If null, a new note will be created.
+ * @param initialText The initial text to display in the text field.
+ * @param initialThoughts The initial thoughts to display in the thoughts field.
+ */
 @Composable
 fun NoteEditScreen(
     navController: NavController,
@@ -133,48 +140,6 @@ fun NoteEditScreen(
                 }
             }
 
-//            // 显示笔记选择对话框
-//            if (showDialog.value) {
-//                AlertDialog(
-//                    onDismissRequest = { showDialog.value = false },
-//                    title = { Text("Choose a note") },
-//                    text = {
-//                        Column {
-//                            notes.forEach { note ->
-//                                Text(
-//                                    text = note.text,
-//                                    modifier = Modifier
-//                                        .clickable {
-//                                            viewModel.addTextToExistingNote(note, selectedText)
-//                                            showDialog.value = false
-//                                            navController.popBackStack()
-//                                        }
-//                                        .padding(8.dp)
-//                                )
-//                                Divider()
-//                            }
-//                        }
-//                    },
-//                    confirmButton = {
-//                        TextButton(onClick = { showDialog.value = false }) {
-//                            Text("Cancel")
-//                        }
-//                    }
-//                )
-//            }
-//            // 没有笔记时的提示对话框
-//            if (showNoNotesDialog.value) {
-//                AlertDialog(
-//                    onDismissRequest = { showNoNotesDialog.value = false },
-//                    title = { Text("Tip") },
-//                    text = { Text("No node, please add") },
-//                    confirmButton = {
-//                        TextButton(onClick = { showNoNotesDialog.value = false }) {
-//                            Text("confirm")
-//                        }
-//                    }
-//                )
-//            }
         }
     )
 }

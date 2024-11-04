@@ -114,7 +114,7 @@ class ReaderActivity : AppCompatActivity() {
                                     }
                                 }
 
-                                // 渲染章节内容
+
                                 val state = viewModel.state.collectAsState().value
                                 ChaptersContent(
                                     state = state,
@@ -132,7 +132,7 @@ class ReaderActivity : AppCompatActivity() {
                         )
                     }
 
-                    // 新的 Note 编辑页面
+
                     composable(
                         "note_edit/{selectedText}/{thoughts}",
                         arguments = listOf(

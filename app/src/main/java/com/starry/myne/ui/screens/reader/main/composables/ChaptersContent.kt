@@ -146,7 +146,7 @@ fun ChaptersContent(
                     if (selectedNoteId.isNotEmpty()) {
                         // 保存选中的文本和感想到笔记
                         //noteViewModel.addTextToExistingNote()
-                        noteViewModel.addThoughtToExistingNote(selectedNoteId.toLong(), thoughts)
+                        noteViewModel.addThoughtToExistingNote(selectedNoteId.toLong(), selectedText, thoughts)
                         showDialog = false // 关闭对话框
                         thoughts = "" // 清空感想字段
                     }
@@ -168,7 +168,7 @@ fun ChaptersContent(
     if (showNoteSelectionDialog) {
         AlertDialog(
             onDismissRequest = { showNoteSelectionDialog = false },
-            title = { Text("选择保存到的笔记") },
+            title = { Text("Select the node to save thought") },
             text = {
                 Column {
                     notes.forEach { note ->
