@@ -32,7 +32,7 @@ import com.starry.myne.helpers.Constants
 
 @Database(
     entities = [LibraryItem::class, ProgressData::class, Note::class],
-    version = 5,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -51,7 +51,7 @@ abstract class MyneDatabase : RoomDatabase() {
         private val migration3to4 = Migration(3, 4) { database ->
             database.execSQL("ALTER TABLE reader_table RENAME COLUMN book_id TO library_item_id")
         }
-        private val migration5to6 = Migration(4, 5) { database ->
+        private val migration5to6 = Migration(5, 6) { database ->
             database.execSQL("""
         CREATE TABLE IF NOT EXISTS `notes` (
             `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -60,6 +60,31 @@ abstract class MyneDatabase : RoomDatabase() {
             `thoughts` TEXT NOT NULL
         )
     """.trimIndent())
+        }
+
+        private val migration6to7 = Migration(6, 7) { database ->
+            // 创建新表
+            database.execSQL("""
+        CREATE TABLE IF NOT EXISTS `new_notes` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            `title` TEXT NOT NULL,
+            `entries` TEXT NOT NULL
+        )
+    """.trimIndent())
+
+            // 迁移数据，确保生成的 JSON 是数组格式
+            database.execSQL("""
+        INSERT INTO `new_notes` (id, title, entries)
+        SELECT id, title, 
+               json_array(
+                   json_object('text', COALESCE(text, ''), 'thoughts', COALESCE(thoughts, ''))
+               )
+        FROM `notes`
+    """.trimIndent())
+
+            // 删除旧表，重命名新表
+            database.execSQL("DROP TABLE `notes`")
+            database.execSQL("ALTER TABLE `new_notes` RENAME TO `notes`")
         }
 
         @Volatile
@@ -76,7 +101,7 @@ abstract class MyneDatabase : RoomDatabase() {
                     context.applicationContext,
                     MyneDatabase::class.java,
                     Constants.DATABASE_NAME
-                ).addMigrations(migration3to4,migration5to6).build()
+                ).addMigrations(migration3to4,migration5to6, migration6to7).build()
                 INSTANCE = instance
                 // return instance
                 instance

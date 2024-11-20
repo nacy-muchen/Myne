@@ -146,7 +146,7 @@ fun ChaptersContent(
                     if (selectedNoteId.isNotEmpty()) {
                         // 保存选中的文本和感想到笔记
                         //noteViewModel.addTextToExistingNote()
-                        noteViewModel.addThoughtToExistingNote(selectedNoteId.toLong(), selectedText, thoughts)
+                        noteViewModel.addEntryToExistingNote(selectedNoteId.toLong(), selectedText, thoughts)
                         showDialog = false // 关闭对话框
                         thoughts = "" // 清空感想字段
                     }
@@ -173,11 +173,14 @@ fun ChaptersContent(
                 Column {
                     notes.forEach { note ->
                         Text(
-                            text = note.text,
+                            text = note.title,
                             modifier = Modifier
                                 .clickable {
                                     // 将选中的文本和感想保存到选中的笔记中
-                                    noteViewModel.addTextToExistingNote(note, selectedText)
+                                    noteViewModel.addEntryToExistingNote(
+                                        noteId = note.id,
+                                        newText = selectedText,
+                                        newThought = thoughts)
                                     showNoteSelectionDialog = false // 关闭选择对话框
                                     thoughts = "" // 清空感想字段
                                 }

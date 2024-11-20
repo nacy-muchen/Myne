@@ -120,7 +120,7 @@ fun NoteListScreen(navController: NavController) {
                         if (titleInput.value.isNotEmpty()) {
                             val title = titleInput.value
                             coroutineScope.launch {
-                                viewModel.addNote(title = title, text = "", thoughts = "")
+                                viewModel.addNote(title = title)
                                 snackBarHostState.showSnackbar("new notes added")
                             }
                             dialogState.value = false
@@ -244,24 +244,7 @@ private fun SwipeableNoteItem(
     }
 }
 
-/**
- * Composable function to display a card view for a note.
- *
- * @param note The note to be displayed.
- * @param onDetailClick Callback when the note is clicked to view details.
- */
-@Composable
-fun NoteListItem(note: Note, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(note.text) },
-        supportingContent = { Text(note.thoughts) },
-        modifier = Modifier
-            .clickable { onClick() }
-            .fillMaxWidth()
-            .padding(8.dp)
-    )
-    Divider()
-}
+
 
 /**
  * Composable function to display a card view for a note.
@@ -315,7 +298,7 @@ private fun NoteCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = note.thoughts.ifEmpty { "No Content" },
+                    text = note.entries.firstOrNull()?.thoughts ?: "No Content",
                     style = MaterialTheme.typography.bodyMedium,
                     fontSize = 14.sp,
                     maxLines = 2,
@@ -326,14 +309,3 @@ private fun NoteCard(
     }
 }
 
-@Preview
-@Composable
-fun NoteCardPreview() {
-    NoteCard(
-        Note(
-            title = "c1",
-            text = "",
-            thoughts = ""
-        )
-    ) { }
-}

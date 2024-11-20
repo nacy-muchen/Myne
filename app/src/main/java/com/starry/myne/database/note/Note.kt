@@ -3,6 +3,8 @@ package com.starry.myne.database.note
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.gson.reflect.TypeToken
+import com.google.gson.Gson
 
 /**
  * Represents a Note entity in the database.
@@ -16,7 +18,19 @@ import androidx.room.PrimaryKey
 data class Note(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "title") val title: String,
-    @ColumnInfo(name = "text") val text: String,   // 选中的文字内容
-    @ColumnInfo(name = "thoughts") val thoughts: String // 用户的感想或注释
-)
+    @ColumnInfo(name = "entries") val entriesJson: String){
+    // 将 JSON 转换为 NoteEntry 列表
+    val entries: List<NoteEntry>
+        get() = try {
+            Gson().fromJson(entriesJson, object : TypeToken<List<NoteEntry>>() {}.type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList() // 解析失败返回空列表
+        }
+    // 返回一个新对象，并更新 entriesJson
+    fun withUpdatedEntries(newEntries: List<NoteEntry>): Note {
+        return this.copy(entriesJson = Gson().toJson(newEntries))
+    }
+}
+
+
 

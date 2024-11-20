@@ -4,8 +4,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.starry.myne.database.note.Note
 import com.starry.myne.database.note.NoteDAO
+import com.starry.myne.database.note.NoteEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,11 +32,12 @@ class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewMode
      * @param thoughts The user's thoughts or comments related to the note.
      * @return The ID of the newly created note.
      */
-    suspend fun addNote(title:String, text: String, thoughts: String):Long {
-        var newId:Long=0
-        val newNote = Note(title= title,text = text, thoughts = thoughts)
-        newId = noteDao.insert(newNote) // 插入并获取生成的 ID
-        return newId
+    suspend fun addNote(title: String): Long {
+        val newNote = Note(
+            title = title,
+            entriesJson = Gson().toJson(emptyList<NoteEntry>()) // 初始化空 entries 列表
+        )
+        return noteDao.insert(newNote)
     }
 
     /**
@@ -86,31 +89,16 @@ class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewMode
      * @param note The note to which the new text will be appended.
      * @param newText The additional text to be added to the note's content.
      */
-    fun addTextToExistingNote(note: Note, newText: String) {
-        viewModelScope.launch {
-            val updatedNote = note.copy(text = note.text + "\n" + newText)
-            noteDao.update(updatedNote)
-        }
-    }
-
-    /**
-     * Adds thoughts and text to an existing note by its ID.
-     *
-     * @param noteId The ID of the note to which the content will be added.
-     * @param text The new text to update the note's main content.
-     * @param thoughts The user's thoughts to be appended to the existing thoughts.
-     */
-    fun addThoughtToExistingNote(noteId: Long, text: String, thoughts: String) {
-        // 这里需要实现将选中的文本和感想保存到指定笔记的逻辑
+    fun addEntryToExistingNote(noteId: Long, newText: String, newThought: String) {
         viewModelScope.launch {
             val note = noteDao.getNoteById(noteId)
             note?.let {
-                // 获取当前笔记内容，并更新
-                val updatedNote: Note = it.copy(
-                    text = text,
-                    thoughts = note.thoughts + "\n" + thoughts
-                ) // 根据需求更新其他字段
-                // 保存到数据库或更新操作
+                // 获取当前的 entries 列表并添加新条目
+                val updatedEntries = it.entries.toMutableList()
+                updatedEntries.add(NoteEntry(newText, newThought))
+
+                // 更新 Note 对象并保存到数据库
+                val updatedNote = it.withUpdatedEntries(updatedEntries)
                 noteDao.update(updatedNote)
             }
         }

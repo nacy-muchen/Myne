@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.starry.myne.api.BookAPI
 import com.starry.myne.api.models.Book
 import com.starry.myne.api.models.BookSet
@@ -30,6 +31,7 @@ import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.database.library.LibraryDao
 import com.starry.myne.database.library.LibraryItem
 import com.starry.myne.database.note.Note
+import com.starry.myne.database.note.NoteEntry
 import com.starry.myne.helpers.Constants
 import com.starry.myne.helpers.PreferenceUtil
 import com.starry.myne.helpers.book.BookDownloader
@@ -132,7 +134,13 @@ class BookDetailViewModel @Inject constructor(
 
     fun saveNoteToDatabase(title:String, selectedText: String, thoughts: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val note = Note(title=title,text = selectedText, thoughts = thoughts)
+            val entries = listOf(NoteEntry(text = selectedText, thoughts = thoughts))
+
+            // 将 NoteEntry 列表序列化为 JSON
+            val entriesJson = Gson().toJson(entries)
+
+            // 创建 Note 对象
+            val note = Note(title = title, entriesJson = entriesJson)
             noteDao.insert(note)
         }
     }

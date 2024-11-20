@@ -98,18 +98,6 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    fun addNote(title:String,text: String, thoughts: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val newNote = Note(
-                title=title,
-                text = text,
-                thoughts = thoughts
-            )
-            noteDao.insert(newNote) // 将新笔记保存到数据库中
-        }
-    }
-
-
 
     fun loadEpubBook(libraryItemId: Int, onLoaded: (ReaderScreenState) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
