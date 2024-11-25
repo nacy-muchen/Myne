@@ -10,6 +10,8 @@ import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.database.note.NoteEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 /**
@@ -35,7 +37,7 @@ class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewMode
     suspend fun addNote(title: String): Long {
         val newNote = Note(
             title = title,
-            entriesJson = Gson().toJson(emptyList<NoteEntry>()) // 初始化空 entries 列表
+            entriesJson = Json.encodeToString(emptyList<NoteEntry>()) // 初始化空 entries 列表
         )
         return noteDao.insert(newNote)
     }

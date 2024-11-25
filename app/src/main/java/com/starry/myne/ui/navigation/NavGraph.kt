@@ -33,6 +33,7 @@ import com.starry.myne.ui.screens.home.composables.HomeScreen
 import com.starry.myne.ui.screens.library.composables.LibraryScreen
 import com.starry.myne.ui.screens.note.NoteEditScreen
 import com.starry.myne.ui.screens.note.NoteListScreen
+import com.starry.myne.ui.screens.note.NotePreviewScreen
 import com.starry.myne.ui.screens.reader.detail.ReaderDetailScreen
 import com.starry.myne.ui.screens.settings.composables.AboutScreen
 import com.starry.myne.ui.screens.settings.composables.OSLScreen
@@ -233,6 +234,11 @@ fun NavGraph(
         ) { backStackEntry ->
             val noteId = backStackEntry.arguments?.getLong("noteId")
             NoteEditScreen(navController, noteId)
+        }
+
+        composable("note_preview/{noteId}") { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getString("noteId")?.toLongOrNull()
+            NotePreviewScreen(navController = navController, noteId = noteId)
         }
 
     }

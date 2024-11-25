@@ -18,6 +18,7 @@
 package com.starry.myne
 
 import android.app.Application
+import android.util.Log
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import coil.ImageLoader
 import coil.ImageLoaderFactory
@@ -25,6 +26,7 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import coil.util.DebugLogger
+import com.google.gson.Gson
 import dagger.hilt.android.HiltAndroidApp
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit

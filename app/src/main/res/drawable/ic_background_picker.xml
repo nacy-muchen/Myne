@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 背景图案的外框 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M3,3h18v18H3z"
+        android:fillAlpha="0.2" />
+    <!-- 第一层背景 -->
+    <path
+        android:fillColor="#FF6F00"
+        android:pathData="M5,5h7v7H5z" />
+    <!-- 第二层背景 -->
+    <path
+        android:fillColor="#00C853"
+        android:pathData="M12,12h7v7h-7z" />
+    <!-- 分隔线 -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="1"
+        android:pathData="M3,12h18M12,3v18" />
+</vector>

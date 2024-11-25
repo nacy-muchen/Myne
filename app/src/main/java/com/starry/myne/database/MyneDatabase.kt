@@ -21,18 +21,21 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.room.migration.Migration
+import com.starry.myne.R
 import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.database.library.LibraryDao
 import com.starry.myne.database.library.LibraryItem
 import com.starry.myne.database.note.Note
+import com.starry.myne.database.note.NoteEntryConverter
 import com.starry.myne.database.progress.ProgressDao
 import com.starry.myne.database.progress.ProgressData
 import com.starry.myne.helpers.Constants
 
 @Database(
     entities = [LibraryItem::class, ProgressData::class, Note::class],
-    version = 7,
+    version = 8,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -40,6 +43,8 @@ import com.starry.myne.helpers.Constants
         AutoMigration(from = 4, to = 5),
     ]
 )
+
+@TypeConverters(NoteEntryConverter::class)
 abstract class MyneDatabase : RoomDatabase() {
 
     abstract fun getLibraryDao(): LibraryDao
@@ -86,6 +91,10 @@ abstract class MyneDatabase : RoomDatabase() {
             database.execSQL("DROP TABLE `notes`")
             database.execSQL("ALTER TABLE `new_notes` RENAME TO `notes`")
         }
+        private val migration7to8 = Migration(7, 8) { database ->
+            database.execSQL("ALTER TABLE `notes` ADD COLUMN `background` INTEGER NOT NULL DEFAULT ${R.drawable.p1}")
+        }
+
 
         @Volatile
         private var INSTANCE: MyneDatabase? = null
@@ -101,7 +110,7 @@ abstract class MyneDatabase : RoomDatabase() {
                     context.applicationContext,
                     MyneDatabase::class.java,
                     Constants.DATABASE_NAME
-                ).addMigrations(migration3to4,migration5to6, migration6to7).build()
+                ).addMigrations(migration3to4,migration5to6, migration6to7, migration7to8).build()
                 INSTANCE = instance
                 // return instance
                 instance
