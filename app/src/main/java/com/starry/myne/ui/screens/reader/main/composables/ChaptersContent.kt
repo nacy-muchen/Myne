@@ -23,26 +23,30 @@ import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -93,6 +97,7 @@ fun ChaptersContent(
     var showNoteSelectionDialog by remember { mutableStateOf(false) }
     val notes by noteViewModel.allNotes.observeAsState(emptyList())
     var selectedNoteId by remember { mutableStateOf("") }
+    var snackbarMessage by remember { mutableStateOf("") }
 
 
     LazyColumn(
@@ -124,31 +129,76 @@ fun ChaptersContent(
             title = { Text("Choose A Note") },
             text = {
                 Column {
-                    Text("Selected Text：$selectedText")
+                    Box(modifier = Modifier.heightIn(min = 56.dp, max = 150.dp)) {
+                        Text("Selected Text: $selectedText", modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                        )
+                    }
                     TextField(
                         value = thoughts,
                         onValueChange = { thoughts = it },
-                        label = { Text("Your Thought") }
+                        label = { Text("Your Thought")},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .verticalScroll(rememberScrollState()) // 添加滚动功能
+                            .heightIn(min = 56.dp, max = 150.dp)
                     )
-                    notes.forEach { note ->
-                        Button(onClick = {
-                            selectedNoteId = note.id.toString() // 记录选择的笔记
-                            // 这里可以弹出一个 TextField 让用户输入感想
-                            thoughts = "" // 清空感想字段
-                        }) {
-                            Text(note.title) // 显示笔记标题
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp)
+                    ) {
+                        items(notes) { note ->
+                            Button(
+                                onClick = {
+                                    selectedNoteId = if (selectedNoteId == note.id.toString()) {
+                                        "" // 如果当前按钮已经选中，则取消
+                                    } else {
+                                        note.id.toString() // 否则选择当前按钮
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (selectedNoteId == note.id.toString()) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.surface
+                                    },
+                                    contentColor = if (selectedNoteId == note.id.toString()) {
+                                        MaterialTheme.colorScheme.onPrimary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Text(note.title) // 显示笔记标题
+                            }
                         }
                     }
                 }
             },
             confirmButton = {
                 Button(onClick = {
-                    if (selectedNoteId.isNotEmpty()) {
+                    if (selectedNoteId.isEmpty()) {
+                        // 如果没有选择笔记，弹出提示
+                        showSnackbar = true
+                        snackbarMessage = "Please select a note before saving." // 错误提示
+
+                    } else {
                         // 保存选中的文本和感想到笔记
-                        //noteViewModel.addTextToExistingNote()
                         noteViewModel.addEntryToExistingNote(selectedNoteId.toLong(), selectedText, thoughts)
                         showDialog = false // 关闭对话框
                         thoughts = "" // 清空感想字段
+                        selectedNoteId = "" // 重置选中状态
+
+                        showSnackbar = true
+                        snackbarMessage = "Saved"
                     }
                 }) {
                     Text("Save")
@@ -157,41 +207,7 @@ fun ChaptersContent(
             dismissButton = {
                 Button(onClick = {
                     showDialog = false // 取消操作
-                    thoughts = "" // 清空感想字段
-                }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-    if (showNoteSelectionDialog) {
-        AlertDialog(
-            onDismissRequest = { showNoteSelectionDialog = false },
-            title = { Text("Select the node to save thought") },
-            text = {
-                Column {
-                    notes.forEach { note ->
-                        Text(
-                            text = note.title,
-                            modifier = Modifier
-                                .clickable {
-                                    // 将选中的文本和感想保存到选中的笔记中
-                                    noteViewModel.addEntryToExistingNote(
-                                        noteId = note.id,
-                                        newText = selectedText,
-                                        newThought = thoughts)
-                                    showNoteSelectionDialog = false // 关闭选择对话框
-                                    thoughts = "" // 清空感想字段
-                                }
-                                .padding(8.dp)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showNoteSelectionDialog = false
+                    selectedNoteId = "" // 重置选中状态
                 }) {
                     Text("Cancel")
                 }
@@ -202,7 +218,7 @@ fun ChaptersContent(
     // 显示 Snackbar 提示
     if (showSnackbar) {
         LaunchedEffect(showSnackbar) {
-            snackBarHostState.showSnackbar("save successfully") // 显示提示
+            snackBarHostState.showSnackbar(snackbarMessage) // 显示提示
             showSnackbar = false // 重置Snackbar状态
         }
     }

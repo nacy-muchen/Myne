@@ -42,6 +42,10 @@ android {
         }
 
         buildConfigField("String", "GOOGLE_API_KEY", getGoogleApiKey())
+        buildConfigField "String", "API_KEY", "\"${properties['API_KEY']}\""
+        buildConfigField "String", "SECRET_KEY", "\"${properties['SECRET_KEY']}\""
+
+
     }
 
     buildTypes {
@@ -93,6 +97,12 @@ aboutLibraries {
 
 
 dependencies {
+    implementation "io.ktor:ktor-client-core:2.1.0"
+    implementation "io.ktor:ktor-client-android:2.1.0"
+    implementation "io.ktor:ktor-client-json:2.1.0"
+    implementation "io.ktor:ktor-client-serialization:2.1.0"
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'androidx.test.espresso:espresso-core:3.6.1'
     def composeBom = platform('androidx.compose:compose-bom:2024.09.03')

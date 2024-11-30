@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -66,6 +68,7 @@ fun NotePreviewScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         Text(
                             text = it.title,

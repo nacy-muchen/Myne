@@ -9,7 +9,10 @@ import com.starry.myne.database.note.Note
 import com.starry.myne.database.note.NoteDAO
 import com.starry.myne.database.note.NoteEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.ktor.client.HttpClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -25,7 +28,6 @@ import javax.inject.Inject
 @HiltViewModel
 class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewModel() {
     val allNotes: LiveData<List<Note>> = noteDao.getAllNotes().asLiveData()
-
     /**
      * Adds a new note to the database.
      *
@@ -105,4 +107,5 @@ class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewMode
             }
         }
     }
+
 }
