@@ -120,53 +120,46 @@ fun NoteEditScreen(
 
     fun checkImageStatus(taskId: Long, accessToken: String,index: Int) {
         viewModel.viewModelScope.launch {
-            var retries = 0
             var statusResult: String? = null
-            val maxRetries = 3 // 最大重试次数
-            val retryDelay = 4000L // 每次重试的延迟（单位：毫秒）
+            val retryDelay = 15000L // 每次重试的延迟（单位：毫秒）
 
-            while (retries < maxRetries) {
-                // 查询图像生成状态
-                statusResult = withContext(Dispatchers.IO) {
-                    try {
-                        // 假设 ImageGenerator.queryImageStatus 返回的是一个 JSON 字符串
-                        ImageGenerator.queryImageStatus(accessToken, taskId)
-                    } catch (e: Exception) {
-                        Log.e("ImageGeneration", "Error while checking image status", e)
-                        null
-                    }
+            // 查询图像生成状态
+            statusResult = withContext(Dispatchers.IO) {
+                try {
+                    delay(retryDelay)
+                    // 假设 ImageGenerator.queryImageStatus 返回的是一个 JSON 字符串
+                    ImageGenerator.queryImageStatus(accessToken, taskId)
+                } catch (e: Exception) {
+                    Log.e("ImageGeneration", "Error while checking image status", e)
+                    null
                 }
+            }
 
-                // 打印状态结果
-                Log.d("ImageGeneration", "Status Result: $statusResult")
+            // 打印状态结果
+            Log.d("ImageGeneration", "Status Result: $statusResult")
 
-                if (!statusResult.isNullOrEmpty()) {
-                    try {
-                        // 解析 JSON 字符串为 Map<String, Any>
-                        val secureImageUrl = statusResult.replace("http://", "https://")
+            if (!statusResult.isNullOrEmpty()) {
+                try {
+                    // 解析 JSON 字符串为 Map<String, Any>
+                    val secureImageUrl = statusResult.replace("http://", "https://")
 
-                        generatedImageUrl = secureImageUrl
-                        // 打印解析后的状态
-                        Log.d("ImageGeneration", "Generated Image URL: $generatedImageUrl")
+                    generatedImageUrl = secureImageUrl
+                    // 打印解析后的状态
+                    Log.d("ImageGeneration", "Generated Image URL: $generatedImageUrl")
 
-                        val updatedEntries = entries.toMutableList()
-                        updatedEntries[index] = updatedEntries[index].copy(imageUrl = generatedImageUrl)
-                        entries = updatedEntries // 更新 entries 的引用
+                    val updatedEntries = entries.toMutableList()
+                    updatedEntries[index] = updatedEntries[index].copy(imageUrl = generatedImageUrl)
+                    entries = updatedEntries // 更新 entries 的引用
 
-                        snackBarHostState.showSnackbar("Image generated successfully!")
+                    snackBarHostState.showSnackbar("Image generated successfully!")
 
-                    } catch (e: Exception) {
-                        Log.e("ImageGeneration", "Error parsing status result", e)
-                        snackBarHostState.showSnackbar("Failed to parse image generation status.")
-                    }
-                } else {
-                    Log.d("ImageGeneration", "Failed to generate image.")
-                    snackBarHostState.showSnackbar("Image generation failed.")
+                } catch (e: Exception) {
+                    Log.e("ImageGeneration", "Error parsing status result", e)
+                    snackBarHostState.showSnackbar("Failed to parse image generation status.")
                 }
-
-                // 增加延迟后再重试
-                delay(retryDelay)
-                retries++
+            } else {
+                Log.d("ImageGeneration", "Failed to generate image.")
+                snackBarHostState.showSnackbar("Image generation failed.")
             }
 
             // 如果超过最大重试次数仍未成功
@@ -321,10 +314,7 @@ fun NoteEditScreen(
                                                         checkImageStatus(taskIdResponse, accessToken,index)
 
                                                         Log.d("GenerateImage", "Generated Image URL: $generatedImageUrl")
-
-//                                                        val updatedEntries = entries.toMutableList()
-//                                                        updatedEntries[index] = updatedEntries[index].copy(imageUrl = generatedImageUrl)
-//                                                        entries = updatedEntries
+//
                                                         Log.d("ImageURL", "check ImageURL: $entry")
                                                         Log.d("ImageURL", "check ImageURL: $generatedImageUrl")
 
@@ -333,7 +323,7 @@ fun NoteEditScreen(
                                                         snackBarHostState.showSnackbar("Failed to generate image.")
 
                                                     }
-                                                    isGeneratingImage = false
+                                                    //isGeneratingImage = false
                                                 }
                                         },
                                             enabled = !isGeneratingImage,
@@ -345,7 +335,6 @@ fun NoteEditScreen(
                                                 Text("Generate Image")
                                             }
                                         }
-
 
                                     }
                                 }

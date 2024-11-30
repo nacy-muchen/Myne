@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import coil.compose.rememberImagePainter
 
 
 @Composable
@@ -90,6 +91,18 @@ fun NotePreviewScreen(
                                 color = Color(0xFF9C27B0),
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
+
+                            entry.imageUrl?.let { imageUrl ->
+                                Image(
+                                    painter = rememberImagePainter(imageUrl),
+                                    contentDescription = "Generated Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .padding(bottom = 16.dp)
+                                )
+                            }
                         }
                     }
                 }
