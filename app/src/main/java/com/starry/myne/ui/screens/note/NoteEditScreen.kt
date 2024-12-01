@@ -73,25 +73,23 @@ import java.io.IOException
  * @param navController A controller for navigating between screens.
  * @param noteId The ID of the note to be edited. If null, a new note will be created.
  * @param initialText The initial text to display in the text field.
- * @param initialThoughts The initial thoughts to display in the thoughts field.
  */
 @Composable
 fun NoteEditScreen(
-    navController: NavController,
-    noteId: Long? = null,
-    initialText: String = "",
-    initialThoughts: String = ""
+    navController: NavController, // Navigation controller to manage navigation actions
+    noteId: Long? = null, // Optional note ID for editing an existing note
+    initialText: String = "", // Initial text for the note title
+    initialThoughts: String = "" // Initial thoughts or content for the note
 ) {
 
-    val viewModel: NoteViewModel = hiltViewModel()
-    val notes by viewModel.allNotes.observeAsState(emptyList())
-    var title by remember { mutableStateOf(TextFieldValue(initialText)) }
-    var entries by remember { mutableStateOf(mutableListOf<NoteEntry>()) }
-    val snackBarHostState = remember { SnackbarHostState() }
-    var showBackgroundPicker by remember { mutableStateOf(false) } // 控制背景选择栏的显示
-   // var accessToken by remember { mutableStateOf<String?>(null) } // Define accessToken here
+    val viewModel: NoteViewModel = hiltViewModel() // ViewModel to manage the note data
+    val notes by viewModel.allNotes.observeAsState(emptyList()) // Observing all notes from the ViewModel
+    var title by remember { mutableStateOf(TextFieldValue(initialText)) } // State for the title of the note
+    var entries by remember { mutableStateOf(mutableListOf<NoteEntry>()) } // State to hold the list of note entries
+    val snackBarHostState = remember { SnackbarHostState() } // State to manage Snackbar messages
+    var showBackgroundPicker by remember { mutableStateOf(false) } // Controls the visibility of the background picker
 
-
+    // List of available background images
     val backgroundOptions = listOf(
         R.drawable.p1,
         R.drawable.p2,
@@ -100,61 +98,60 @@ fun NoteEditScreen(
         R.drawable.p5,
         R.drawable.p6
     )
-    var selectedBackground by remember { mutableStateOf(backgroundOptions.first()) }
-    var showDialogForIndex by remember { mutableStateOf(-1) }
-    var isGeneratingImage by remember { mutableStateOf(false) }
-    var selectedText by remember { mutableStateOf<String?>(null) } // 用于存储选中的文本
-    var taskId by remember { mutableStateOf<Long?>(null) } // 存储生成图片的任务 ID
-    var generatedImageUrl by remember { mutableStateOf<String?>(null) }
-    var generatedSummary by remember { mutableStateOf<String?>(null) } // 用于存储生成的摘要
-    val maxSummaryLen = 300 // 最大摘要长度
-    val accessToken = "24.486e9625345c5215cc306a6157c365d0.2592000.1735440634.282335-116408284" // 使用实际的 accessToken
-    val isLoading = remember { mutableStateOf(false) } // 等待状态
 
-    // 如果是编辑已存在的笔记，加载其内容
+    var selectedBackground by remember { mutableStateOf(backgroundOptions.first()) } // State for the selected background image
+    var showDialogForIndex by remember { mutableStateOf(-1) } // State to keep track of dialog visibility for selected index
+    var isGeneratingImage by remember { mutableStateOf(false) } // State to track image generation status
+    var taskId by remember { mutableStateOf<Long?>(null) } // State to store the task ID for image generation
+    var generatedImageUrl by remember { mutableStateOf<String?>(null) } // State to store the generated image URL
+    var generatedSummary by remember { mutableStateOf<String?>(null) } // State to store the generated summary
+    val maxSummaryLen = 300 // Maximum length of the generated summary
+    val accessToken = "24.486e9625345c5215cc306a6157c365d0.2592000.1735440634.282335-116408284" // accessToken to use
+    val isLoading = remember { mutableStateOf(false) } // State to manage loading status
+
+    // If editing an existing note, load its content
     if (noteId != null) {
         // Load the existing note
         val existingNote = notes.find { it.id == noteId }
         existingNote?.let {
-            title = TextFieldValue(it.title) // 假设这里 title 是标题
-            entries = Json.decodeFromString<List<NoteEntry>>(it.entriesJson).toMutableList()
-            selectedBackground = it.background
+            title = TextFieldValue(it.title)// Set the note title in the TextField
+            entries = Json.decodeFromString<List<NoteEntry>>(it.entriesJson).toMutableList()// Load the note entries
+            selectedBackground = it.background// Set the selected background for the note
         }
     }
 
-
+    // Function to check the status of the image generation process
     fun checkImageStatus(taskId: Long, accessToken: String,index: Int) {
         viewModel.viewModelScope.launch {
             var statusResult: String? = null
-            val retryDelay = 15000L // 每次重试的延迟（单位：毫秒）
+            val retryDelay = 15000L // // Delay for each retry in milliseconds
 
-            // 查询图像生成状态
+            // Query image generation status
             statusResult = withContext(Dispatchers.IO) {
                 try {
-                    delay(retryDelay)
-                    // 假设 ImageGenerator.queryImageStatus 返回的是一个 JSON 字符串
-                    ImageGenerator.queryImageStatus(accessToken, taskId)
+                    delay(retryDelay) // Wait before querying
+                    ImageGenerator.queryImageStatus(accessToken, taskId)// Query image status
                 } catch (e: Exception) {
                     Log.e("ImageGeneration", "Error while checking image status", e)
                     null
                 }
             }
 
-            // 打印状态结果
+            // Log the status result
             Log.d("ImageGeneration", "Status Result: $statusResult")
 
             if (!statusResult.isNullOrEmpty()) {
                 try {
-                    // 解析 JSON 字符串为 Map<String, Any>
+                    // Parse the image URL from the response
                     val secureImageUrl = statusResult.replace("http://", "https://")
 
-                    generatedImageUrl = secureImageUrl
-                    // 打印解析后的状态
+                    generatedImageUrl = secureImageUrl// Store the secure image URL
                     Log.d("ImageGeneration", "Generated Image URL: $generatedImageUrl")
 
+                    // Update the note entries with the generated image URL
                     val updatedEntries = entries.toMutableList()
                     updatedEntries[index] = updatedEntries[index].copy(imageUrl = generatedImageUrl)
-                    entries = updatedEntries // 更新 entries 的引用
+                    entries = updatedEntries // Update the entries state
 
                     snackBarHostState.showSnackbar("Image generated successfully!")
 
@@ -167,48 +164,54 @@ fun NoteEditScreen(
                 snackBarHostState.showSnackbar("Image generation failed.")
             }
 
-            // 如果超过最大重试次数仍未成功
+            // Reset image generation status
             isGeneratingImage = false
         }
     }
 
 
-    // 生成摘要函数
+    // Function to generate a summary for the note
     fun generateSummary() {
         // 调用生成摘要的 API
-        isLoading.value = true
-        val content = entries.joinToString(" ") { it.text } // 拼接所有entry中的text作为content
+        isLoading.value = true// Set loading state to true
+        val content = entries.joinToString(" ") { it.text } // Combine all entry texts into one content string
 
+        // Call the summary generation API
         SummaryGenerator.generateSummary(content, accessToken, maxSummaryLen) { summary ->
-            // 在这里处理生成的摘要
-            isLoading.value = false
+            isLoading.value = false// Set loading state to false after the API call
             if (summary != null) {
-                // 更新生成的摘要
+                // Update the generated summary with the response
                 generatedSummary = summary
-                // 你可以选择将摘要添加到笔记的 entries 中
+                // Add a new entry for the generated summary
                 val updatedEntries = entries.toMutableList()
-                updatedEntries.add(NoteEntry(text = "Summary: $generatedSummary", thoughts = ""))
-                entries = updatedEntries // 更新 entries
+                updatedEntries.add(NoteEntry(text = "Summary: $generatedSummary", thoughts = "")) // Add summary entry
+                entries = updatedEntries // Update entries state
             } else{
                 Log.d("generatedSummary","Failed to Generate Summary!")
             }
         }
     }
 
+    // Scaffold to layout the screen, including AppBar, Body content, and SnackBar
     Scaffold(
-        snackbarHost = { SnackbarHost(snackBarHostState) },
+        snackbarHost = { SnackbarHost(snackBarHostState) },// Display a Snackbar to show messages
         topBar = {
             TopAppBar(
-                title = { Text("Edit Note") },
+                title = { Text("Edit Note") },// Title for the top bar
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
+                        // Navigation icon to go back to the previous screen
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
+                // buttons to select background and preview
                 actions = {
+                    // Button to toggle the background picker visibility
                     IconButton(onClick = { showBackgroundPicker = !showBackgroundPicker }) {
                         Icon( painterResource(id = R.drawable.ic_background_picker), contentDescription = "Toggle Background Picker")
                     }
+
+                    // Button to navigate to the note preview screen
                     IconButton(onClick = {
                         navController.navigate("note_preview/${noteId ?: 0}")
                     }) {
@@ -217,50 +220,55 @@ fun NoteEditScreen(
                 }
             )
         },
+
         content = { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White)
+                    .background(Color.White)// Background color for the content area
             ) {
+                // Display selected background image
                 Image(
                     painter = painterResource(id = selectedBackground),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize()// Image takes up the whole screen size
                 )
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
+                        .padding(paddingValues)// Padding for content inside the column
                         .padding(16.dp),
                 ) {
+                    // Show background picker when the flag is true
                     if (showBackgroundPicker) {
-                        // 背景选择器
                         LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp) // Space between items
                         ) {
                             items(backgroundOptions) { background ->
                                 Box(
                                     modifier = Modifier
-                                        .size(100.dp)
-                                        .clickable { selectedBackground = background }
+                                        .size(100.dp) // Set the size of each background option
+                                        .clickable { selectedBackground = background }// Set selected background when clicked
                                         .padding(8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
+                                    // Display each background option as an image
                                     Image(
                                         painter = painterResource(id = background),
-                                        contentDescription = "Background Option",
-                                        modifier = Modifier.fillMaxSize()
+                                        contentDescription = "Background Option",// Descriptive text for accessibility
+                                        modifier = Modifier.fillMaxSize()// Image fills the whole box
                                     )
                                 }
                             }
                         }
                     }
+
+                    // Text field for the note's title
                     TextField(
                         value = title,
                         onValueChange = { title = it },
@@ -272,11 +280,12 @@ fun NoteEditScreen(
 
                     Column(
                         modifier = Modifier
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
+                            .weight(1f)// Allow this column to take up remaining space
+                            .verticalScroll(rememberScrollState())// Make the column scrollable
                     ) {
+                        // Iterate through the entries and display each entry
                         entries.forEachIndexed { index, entry ->
-                            var showActions by remember { mutableStateOf(false) }
+                            var showActions by remember { mutableStateOf(false) } // State to show or hide actions for each entry
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -284,15 +293,16 @@ fun NoteEditScreen(
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onLongPress = {
-                                                showActions = true // 长按显示删除按钮
+                                                showActions = true // Show delete actions on long press
                                             },
                                             onTap = {
-                                                // 点击切换删除按钮显示状态
+                                                // Hide actions on normal tap
                                                 showActions = false
                                             }
                                         )
                                     }
                             ) {
+                                // Display the text of each entry
                                 Text(
                                     text = entry.text,
                                     style = MaterialTheme.typography.body1,
@@ -301,6 +311,7 @@ fun NoteEditScreen(
                                         .padding(end = 8.dp)
                                 )
 
+                                // Show actions (like delete) if long pressed
                                 if (showActions) {
                                     Column(
                                         modifier = Modifier
@@ -310,22 +321,22 @@ fun NoteEditScreen(
                                     ) {
                                         Button(
                                             onClick = {
-                                                showDialogForIndex = index // 点击删除按钮显示确认对话框
+                                                showDialogForIndex = index // Show confirmation dialog for deletion
                                             },
-                                            modifier = Modifier.fillMaxWidth()
+                                            modifier = Modifier.fillMaxWidth()// Button takes up full width
                                         ) {
                                             Text("Delete")
                                         }
 
+                                        // Button to generate image from the entry text
                                         Button(
                                             onClick = {
-                                                isGeneratingImage = true
+                                                isGeneratingImage = true // Set generating flag
                                                 viewModel.viewModelScope.launch {
-                                                    val resolution = "512*512"
+                                                    val resolution = "512*512"// Define resolution for image
                                                     val taskIdResponse = withContext(Dispatchers.IO) {
-                                                            // 网络请求应该放在 IO 线程池中执行
                                                         try {
-                                                            // 调用生成图像的 API
+                                                            // Generate image based on entry text
                                                             ImageGenerator.generateImageFromText(accessToken, entry.text, resolution)
                                                         } catch (e: Exception) {
                                                             Log.e("GenerateImage", "Error generating image", e)
@@ -334,8 +345,8 @@ fun NoteEditScreen(
                                                     }
 
                                                     if (taskIdResponse != null) {
-                                                        taskId = taskIdResponse
-                                                        checkImageStatus(taskIdResponse, accessToken,index)
+                                                        taskId = taskIdResponse// Store the task ID
+                                                        checkImageStatus(taskIdResponse, accessToken,index)// Check image generation status
 
                                                         Log.d("GenerateImage", "Generated Image URL: $generatedImageUrl")
 //
@@ -344,41 +355,43 @@ fun NoteEditScreen(
 
 
                                                     } else {
+                                                        // Show error snackbar if image generation fails
                                                         snackBarHostState.showSnackbar("Failed to generate image.")
 
                                                     }
-                                                    //isGeneratingImage = false
                                                 }
                                         },
-                                            enabled = !isGeneratingImage,
-                                            modifier = Modifier.fillMaxWidth() // 按钮占据整行
+                                            enabled = !isGeneratingImage,// Disable the button if image is being generated
+                                            modifier = Modifier.fillMaxWidth()  // Button takes up full width
                                         ) {
+                                            // Show progress indicator when image is being generated
                                             if (isGeneratingImage) {
                                                 CircularProgressIndicator(modifier = Modifier.size(16.dp))
                                             } else {
-                                                Text("Generate Image")
+                                                Text("Generate Image")// Button text when not generating
                                             }
                                         }
 
                                     }
                                 }
                                 entry.imageUrl?.let { generatedImageUrl ->
+                                    // If the entry has an image URL, display the generated image
                                     Image(
-                                        painter = rememberImagePainter(generatedImageUrl),
-                                        contentDescription = "Generated Image",
+                                        painter = rememberImagePainter(generatedImageUrl), // Load the image using the generated URL
+                                        contentDescription = "Generated Image",// Descriptive text for accessibility
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(200.dp)
-                                            .padding(8.dp)
+                                            .fillMaxWidth()// Image takes the full width of the screen
+                                            .height(200.dp)// Set the height of the image
+                                            .padding(8.dp)// Add padding around the image
                                     )
                                 }
 
                                 TextField(
-                                    value = entry.thoughts,
-                                    onValueChange = { newThought ->
-                                        val updatedEntries = entries.toMutableList()
-                                        updatedEntries[index] = entry.copy(thoughts = newThought)
-                                        entries = updatedEntries
+                                    value = entry.thoughts,// Bind the thoughts field of the entry to the TextField
+                                    onValueChange = { newThought -> // When the user modifies the text
+                                        val updatedEntries = entries.toMutableList()// Create a mutable copy of the entries list
+                                        updatedEntries[index] = entry.copy(thoughts = newThought)// Update the current entry with the new thoughts
+                                        entries = updatedEntries// Set the updated list as the new entries
                                     },
                                     label = { Text("Thought ${index + 1}") },
                                     modifier = Modifier.fillMaxWidth()
@@ -386,23 +399,25 @@ fun NoteEditScreen(
                             }
                             Divider(color = Color.Gray, thickness = 1.dp)
 
+                            // If the user has long-pressed on an entry, show the confirmation dialog to delete it
                             if (showDialogForIndex == index) {
                                 AlertDialog(
-                                    onDismissRequest = { showDialogForIndex = -1 }, // 点击对话框外部关闭对话框
+                                    onDismissRequest = { showDialogForIndex = -1 }, // Close the dialog when the user taps outside
                                     title = { Text("Delete Entry") },
                                     text = { Text("Are you sure you want to delete this entry?") },
                                     confirmButton = {
                                         TextButton(onClick = {
-                                            // 删除 entry
+                                            // If confirmed, delete the entry
                                             val updatedEntries = entries.toMutableList()
                                             updatedEntries.removeAt(index)
-                                            entries = updatedEntries
-                                            showDialogForIndex = -1 // 关闭确认对话框
+                                            entries = updatedEntries// Update the entries list
+                                            showDialogForIndex = -1 // Close the confirmation dialog
                                         }) {
                                             Text("Yes")
                                         }
                                     },
                                     dismissButton = {
+                                        // If canceled, just close the dialog
                                         TextButton(onClick = { showDialogForIndex = -1 }) {
                                             Text("No")
                                         }
@@ -412,19 +427,18 @@ fun NoteEditScreen(
                         }
                         Spacer(modifier = Modifier.height(20.dp))
 
-
-
+                        // Show a loading spinner if the content is still being generated
                         if (isLoading.value) {
                             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                         }
 
                         Button(
                             onClick = {
-                                generateSummary() // 触发生成摘要
+                                generateSummary()  // Trigger the summary generation function
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth() // Make the button fill the width of the screen
                         ) {
-                            Text("Generate Summary")
+                            Text("Generate Summary")// Button text
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -437,18 +451,21 @@ fun NoteEditScreen(
 
                         Button(
                             onClick = {
+                                // Save the note when the user clicks "Save"
                                 viewModel.viewModelScope.launch {
-                                    val note = notes.find { it.id == noteId }
+                                    val note = notes.find { it.id == noteId }// Find the existing note by its ID
                                     if (note != null) {
+                                        // Create a new updated note with the modified fields
                                         val updatedNote = note.copy(
-                                            title = title.text,
-                                            entriesJson = Json.encodeToString(entries), // 将更新后的 entries 保存为 JSON
+                                            title = title.text, // Update the title
+                                            entriesJson = Json.encodeToString(entries),  // Serialize the updated entries to JSON
                                             background = selectedBackground
                                         )
+                                        // Update the note in the ViewModel
                                         viewModel.updateNote(updatedNote)
-                                        snackBarHostState.showSnackbar("Saved")
+                                        snackBarHostState.showSnackbar("Saved")// Show a Snackbar indicating the note is saved
                                     }
-                                    navController.popBackStack()
+                                    navController.popBackStack()// Navigate back after saving
                                 }
                             },
                             modifier = Modifier.align(Alignment.End)

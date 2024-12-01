@@ -33,10 +33,12 @@ fun NotePreviewScreen(
     navController: NavController,
     noteId: Long? = null
 ) {
+    // Get the ViewModel using Hilt
     val viewModel: NoteViewModel = hiltViewModel()
+    // Observe all notes from the ViewModel
     val notes by viewModel.allNotes.observeAsState(emptyList())
 
-    // 查找对应笔记
+    // Find the note with the corresponding noteId
     val note = notes.find { it.id == noteId }
 
     Scaffold(
@@ -44,6 +46,7 @@ fun NotePreviewScreen(
             TopAppBar(
                 title = { Text("Preview Note") },
                 navigationIcon = {
+                    // Back button to pop the navigation stack
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
@@ -51,13 +54,15 @@ fun NotePreviewScreen(
             )
         },
         content = { paddingValues ->
+            // If the note exists, display it
             note?.let {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues) // 使用 paddingValues
+                        .padding(paddingValues) // Apply padding from Scaffold
                         .background(Color.White)
                 ) {
+                    // Set the background image for the note
                     Image(
                         painter = painterResource(id = it.background),
                         contentDescription = null,
@@ -65,12 +70,14 @@ fun NotePreviewScreen(
                         modifier = Modifier.fillMaxSize()
                     )
 
+                    // Create a vertical scrollable column to hold note content
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
+                        // Display the note's title
                         Text(
                             text = it.title,
                             style = MaterialTheme.typography.h4,
@@ -78,14 +85,17 @@ fun NotePreviewScreen(
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-
+                        // Display each entry in the note
                         it.entries.forEach { entry ->
+                            // Display entry text
                             Text(
                                 text = entry.text,
                                 style = MaterialTheme.typography.body1,
                                 color = Color.Black,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
+
+                            // Display entry thoughts with a different color
                             Text(
                                 text = entry.thoughts,
                                 style = MaterialTheme.typography.body1,
@@ -93,6 +103,7 @@ fun NotePreviewScreen(
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
+                            // If the entry contains an image URL, display the image
                             entry.imageUrl?.let { imageUrl ->
                                 Image(
                                     painter = rememberImagePainter(imageUrl),
@@ -105,6 +116,7 @@ fun NotePreviewScreen(
                                 )
                             }
 
+                            // If the entry contains a summary, display the summary
                             entry.summary?.let { it1 ->
                                 Text(
                                     text = "Summary:\n$it1",
@@ -119,6 +131,7 @@ fun NotePreviewScreen(
                     }
                 }
             } ?: run {
+                // If no note is found, display a message indicating so
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxSize()

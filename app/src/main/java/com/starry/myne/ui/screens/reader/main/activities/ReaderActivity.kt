@@ -132,7 +132,6 @@ class ReaderActivity : AppCompatActivity() {
                         )
                     }
 
-
                     composable(
                         "note_edit/{selectedText}/{thoughts}",
                         arguments = listOf(
