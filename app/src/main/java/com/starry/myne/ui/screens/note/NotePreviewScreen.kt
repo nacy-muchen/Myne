@@ -116,17 +116,14 @@ fun NotePreviewScreen(
                                 )
                             }
 
-                            // If the entry contains a summary, display the summary
-                            entry.summary?.let { it1 ->
-                                Text(
-                                    text = "Summary:\n$it1",
-                                    style = MaterialTheme.typography.body2,
-                                    color = Color.Blue,
-                                    modifier = Modifier.padding(bottom = 16.dp)
-                                )
-                            }
-
-
+                        }
+                        it.summary?.let { summary ->
+                            Text(
+                                text = "Summary:\n$summary",
+                                style = MaterialTheme.typography.body1,
+                                color = Color.Blue,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
                         }
                     }
                 }

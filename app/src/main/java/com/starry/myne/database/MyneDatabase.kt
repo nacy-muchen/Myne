@@ -35,7 +35,7 @@ import com.starry.myne.helpers.Constants
 
 @Database(
     entities = [LibraryItem::class, ProgressData::class, Note::class],
-    version = 8,
+    version = 9,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -95,6 +95,11 @@ abstract class MyneDatabase : RoomDatabase() {
             database.execSQL("ALTER TABLE `notes` ADD COLUMN `background` INTEGER NOT NULL DEFAULT ${R.drawable.p1}")
         }
 
+        private val migration8to9 = Migration(8, 9) { database ->
+            // 添加 summary 列
+            database.execSQL("ALTER TABLE `notes` ADD COLUMN `summary` TEXT")
+        }
+
 
         @Volatile
         private var INSTANCE: MyneDatabase? = null
@@ -110,7 +115,8 @@ abstract class MyneDatabase : RoomDatabase() {
                     context.applicationContext,
                     MyneDatabase::class.java,
                     Constants.DATABASE_NAME
-                ).addMigrations(migration3to4,migration5to6, migration6to7, migration7to8).build()
+                ).addMigrations(migration3to4,migration5to6, migration6to7, migration7to8,
+                    migration8to9).build()
                 INSTANCE = instance
                 // return instance
                 instance

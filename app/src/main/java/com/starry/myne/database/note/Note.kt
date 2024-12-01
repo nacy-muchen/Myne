@@ -28,7 +28,9 @@ data class Note(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "entries") val entriesJson: String,
-    @ColumnInfo(name = "background") val background: Int = R.drawable.p1){
+    @ColumnInfo(name = "background") val background: Int = R.drawable.p1,
+    @ColumnInfo(name = "summary") val summary: String? = null )
+{
     // 将 JSON 转换为 NoteEntry 列表
     val entries: List<NoteEntry>
         get() = try {
@@ -39,6 +41,10 @@ data class Note(
     // 返回一个新对象，并更新 entriesJson
     fun withUpdatedEntries(newEntries: List<NoteEntry>): Note {
         return this.copy(entriesJson = Json.encodeToString(newEntries))
+    }
+
+    fun withUpdatedSummary(updatedSummary: String): Note {
+        return this.copy(summary = updatedSummary)
     }
 }
 

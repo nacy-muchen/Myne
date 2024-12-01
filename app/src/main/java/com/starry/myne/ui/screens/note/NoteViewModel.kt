@@ -11,6 +11,7 @@ import com.starry.myne.database.note.NoteEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -107,6 +108,25 @@ class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewMode
                 noteDao.update(updatedNote)
             }
         }
+    }
+
+    // 更新 summary 的方法
+    fun updateSummary(noteId: Long, newSummary: String) {
+        viewModelScope.launch {
+            val note = noteDao.getNoteById(noteId)
+            note?.let {
+                // 更新 Note 对象并保存到数据库
+                val updatedNote = it.copy(
+                    summary = newSummary // 直接更新 summary 字段
+                )
+                noteDao.update(updatedNote)
+            }
+        }
+    }
+
+    fun getSummary(noteId:Long): Flow<String>? {
+        val summary = noteDao.getSummaryById(noteId)
+        return summary
     }
 
 }

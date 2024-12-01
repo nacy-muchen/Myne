@@ -55,4 +55,7 @@ interface NoteDAO {
      */
     @Query("SELECT * FROM notes WHERE id = :noteId LIMIT 1")
     suspend fun getNoteById(noteId: Long): Note?
+
+    @Query("SELECT summary FROM notes WHERE id = :noteId LIMIT 1")
+    fun getSummaryById(noteId: Long): Flow<String>?
 }
