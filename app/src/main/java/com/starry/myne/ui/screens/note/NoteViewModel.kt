@@ -28,6 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewModel() {
     val allNotes: LiveData<List<Note>> = noteDao.getAllNotes().asLiveData()
+
     /**
      * Adds a new note to the database.
      *

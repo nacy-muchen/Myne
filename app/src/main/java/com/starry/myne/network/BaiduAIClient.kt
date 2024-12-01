@@ -8,8 +8,6 @@ import org.json.JSONObject
 import java.io.IOException
 
 object ImageGenerator {
-    private const val API_KEY = "bPFtdKpIzzeWipTKysoq0seU" // 替换为你的API密钥
-    private const val SECRET_KEY = "jSIYgvSnuwrUjogmBxtdXoCJvJZqyZcE" // 替换为你的Secret密钥
     private val HTTP_CLIENT = OkHttpClient().newBuilder().build()
 
     // 根据用户输入的文字生成图片

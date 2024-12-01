@@ -52,6 +52,7 @@ import com.starry.myne.R
 import com.starry.myne.database.note.NoteEntry
 import com.starry.myne.network.ImageGenerator
 import com.starry.myne.network.ImageGenerator.generateImageFromText
+import com.starry.myne.network.SummaryGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -105,6 +106,10 @@ fun NoteEditScreen(
     var selectedText by remember { mutableStateOf<String?>(null) } // 用于存储选中的文本
     var taskId by remember { mutableStateOf<Long?>(null) } // 存储生成图片的任务 ID
     var generatedImageUrl by remember { mutableStateOf<String?>(null) }
+    var generatedSummary by remember { mutableStateOf<String?>(null) } // 用于存储生成的摘要
+    val maxSummaryLen = 300 // 最大摘要长度
+    val accessToken = "24.486e9625345c5215cc306a6157c365d0.2592000.1735440634.282335-116408284" // 使用实际的 accessToken
+    val isLoading = remember { mutableStateOf(false) } // 等待状态
 
     // 如果是编辑已存在的笔记，加载其内容
     if (noteId != null) {
@@ -168,7 +173,27 @@ fun NoteEditScreen(
     }
 
 
+    // 生成摘要函数
+    fun generateSummary() {
+        // 调用生成摘要的 API
+        isLoading.value = true
+        val content = entries.joinToString(" ") { it.text } // 拼接所有entry中的text作为content
 
+        SummaryGenerator.generateSummary(content, accessToken, maxSummaryLen) { summary ->
+            // 在这里处理生成的摘要
+            isLoading.value = false
+            if (summary != null) {
+                // 更新生成的摘要
+                generatedSummary = summary
+                // 你可以选择将摘要添加到笔记的 entries 中
+                val updatedEntries = entries.toMutableList()
+                updatedEntries.add(NoteEntry(text = "Summary: $generatedSummary", thoughts = ""))
+                entries = updatedEntries // 更新 entries
+            } else{
+                Log.d("generatedSummary","Failed to Generate Summary!")
+            }
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
@@ -296,7 +321,6 @@ fun NoteEditScreen(
                                             onClick = {
                                                 isGeneratingImage = true
                                                 viewModel.viewModelScope.launch {
-                                                    val accessToken = "24.486e9625345c5215cc306a6157c365d0.2592000.1735440634.282335-116408284" // 使用实际的 accessToken
                                                     val resolution = "512*512"
                                                     val taskIdResponse = withContext(Dispatchers.IO) {
                                                             // 网络请求应该放在 IO 线程池中执行
@@ -388,6 +412,29 @@ fun NoteEditScreen(
                         }
                         Spacer(modifier = Modifier.height(20.dp))
 
+
+
+                        if (isLoading.value) {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        }
+
+                        Button(
+                            onClick = {
+                                generateSummary() // 触发生成摘要
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Generate Summary")
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // 显示生成的摘要
+//                        if (generatedSummary != null) {
+//                            Text("Summary:\n $generatedSummary", style = MaterialTheme.typography.body1)
+//                        }
+
+
                         Button(
                             onClick = {
                                 viewModel.viewModelScope.launch {
@@ -408,6 +455,8 @@ fun NoteEditScreen(
                         ) {
                             Text("Save")
                         }
+
+
                     }
 
                 }

@@ -78,6 +78,7 @@ fun NotePreviewScreen(
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
+
                         it.entries.forEach { entry ->
                             Text(
                                 text = entry.text,
@@ -87,7 +88,7 @@ fun NotePreviewScreen(
                             )
                             Text(
                                 text = entry.thoughts,
-                                style = MaterialTheme.typography.caption,
+                                style = MaterialTheme.typography.body1,
                                 color = Color(0xFF9C27B0),
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
@@ -103,6 +104,17 @@ fun NotePreviewScreen(
                                         .padding(bottom = 16.dp)
                                 )
                             }
+
+                            entry.summary?.let { it1 ->
+                                Text(
+                                    text = "Summary:\n$it1",
+                                    style = MaterialTheme.typography.body2,
+                                    color = Color.Blue,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                            }
+
+
                         }
                     }
                 }
