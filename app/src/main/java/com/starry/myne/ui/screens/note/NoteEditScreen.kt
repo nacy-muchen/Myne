@@ -39,7 +39,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -54,9 +53,7 @@ import androidx.lifecycle.viewModelScope
 import coil.compose.rememberImagePainter
 import com.starry.myne.R
 import com.starry.myne.database.note.NoteEntry
-import com.starry.myne.helpers.toToast
 import com.starry.myne.network.ImageGenerator
-import com.starry.myne.network.ImageGenerator.generateImageFromText
 import com.starry.myne.network.SummaryGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -64,13 +61,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import org.json.JSONObject
-import java.io.IOException
 
 /**
  * Composable function to edit an existing note or create a new one.

@@ -99,25 +99,24 @@ class NoteViewModel @Inject constructor(private val noteDao: NoteDAO) : ViewMode
         viewModelScope.launch {
             val note = noteDao.getNoteById(noteId)
             note?.let {
-                // 获取当前的 entries 列表并添加新条目
+                // gain current entries list and add
                 val updatedEntries = it.entries.toMutableList()
                 updatedEntries.add(NoteEntry(newText, newThought))
 
-                // 更新 Note 对象并保存到数据库
+                //  update Note object and save into database
                 val updatedNote = it.withUpdatedEntries(updatedEntries)
                 noteDao.update(updatedNote)
             }
         }
     }
 
-    // 更新 summary 的方法
+    // update summary
     fun updateSummary(noteId: Long, newSummary: String) {
         viewModelScope.launch {
             val note = noteDao.getNoteById(noteId)
             note?.let {
-                // 更新 Note 对象并保存到数据库
                 val updatedNote = it.copy(
-                    summary = newSummary // 直接更新 summary 字段
+                    summary = newSummary // update summary
                 )
                 noteDao.update(updatedNote)
             }

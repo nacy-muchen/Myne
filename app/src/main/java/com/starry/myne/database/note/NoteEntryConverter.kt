@@ -11,11 +11,11 @@ class NoteEntryConverter {
 
     @TypeConverter
     fun fromEntries(entries: List<NoteEntry>): String {
-        return json.encodeToString(entries) // 序列化为 JSON 字符串
+        return json.encodeToString(entries) // serialization to JSON string
     }
 
     @TypeConverter
     fun toEntries(jsonString: String): List<NoteEntry> {
-        return json.decodeFromString(jsonString) // 反序列化为 List<NoteEntry>
+        return json.decodeFromString(jsonString) // deserialization to List<NoteEntry>
     }
 }

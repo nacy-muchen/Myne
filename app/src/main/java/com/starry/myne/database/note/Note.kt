@@ -43,9 +43,7 @@ data class Note(
         return this.copy(entriesJson = Json.encodeToString(newEntries))
     }
 
-    fun withUpdatedSummary(updatedSummary: String): Note {
-        return this.copy(summary = updatedSummary)
-    }
+
 }
 
 
