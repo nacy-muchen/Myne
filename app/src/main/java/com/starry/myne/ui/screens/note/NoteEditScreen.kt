@@ -125,8 +125,8 @@ fun NoteEditScreen(
             entries = Json.decodeFromString<List<NoteEntry>>(it.entriesJson)
                 .toMutableList()// Load the note entries
             selectedBackground = it.background// Set the selected background for the note
-            selectedFont = ReaderFont.getFontById(it.font) // 初始化字体
-            fontSize = it.fontSize // 初始化字号
+            selectedFont = ReaderFont.getFontById(it.font) // initialize the font
+            fontSize = it.fontSize //initialize the font size
         }
     }
 
@@ -402,7 +402,7 @@ fun NoteEditScreen(
                                                             "GenerateImage",
                                                             "Generated Image URL: $generatedImageUrl"
                                                         )
-//
+
                                                         Log.d("ImageURL", "check ImageURL: $entry")
                                                         Log.d(
                                                             "ImageURL",
@@ -459,8 +459,8 @@ fun NoteEditScreen(
                                     },
                                     label = { Text("Thought ${index + 1}") },
                                     textStyle = TextStyle(
-                                        fontSize = fontSize.sp, // 动态设置字号
-                                        fontFamily = selectedFont.fontFamily // 动态设置字体
+                                        fontSize = fontSize.sp, //set font size
+                                        fontFamily = selectedFont.fontFamily // set font style
                                     ),
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -551,8 +551,8 @@ fun NoteEditScreen(
                                             title = title.text, // Update the title
                                             entriesJson = Json.encodeToString(entries),  // Serialize the updated entries to JSON
                                             background = selectedBackground,
-                                            font = selectedFont.id, // 保存字体 ID
-                                            fontSize = fontSize // 保存字号
+                                            font = selectedFont.id, // save font ID
+                                            fontSize = fontSize // save font size
                                         )
                                         val updatedSummary = generatedSummary
 
@@ -582,14 +582,17 @@ fun NoteEditScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // First button, decreases the font size when clicked
                         FilledTonalButton(onClick = { if (fontSize > 12) fontSize -= 2 }) {
                             Text("-")
                         }
+                        // Text displaying the current font size
                         Text(
                             text = "$fontSize sp",
                             modifier = Modifier.padding(horizontal = 16.dp),
                             fontSize = 16.sp
                         )
+                        // Second button, increases the font size when clicked
                         FilledTonalButton(onClick = { if (fontSize < 32) fontSize += 2 }) {
                             Text("+")
                         }

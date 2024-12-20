@@ -66,7 +66,7 @@ fun NotePreviewScreen(
                     }
                 },
                 actions = {
-                    // 添加导出按钮
+                    // add export button
                     note?.let {
                         IconButton(onClick = {
                             val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -114,7 +114,7 @@ fun NotePreviewScreen(
                         Text(
                             text = it.title,
                             style = TextStyle(
-                                fontSize = note.fontSize.sp, // 使用保存的字号
+                                fontSize = note.fontSize.sp, // use saved font  size
                                 fontFamily = ReaderFont.getFontById(note.font).fontFamily // 使用保存的字体
                             ),
                             color = Color.Black,
@@ -162,8 +162,8 @@ fun NotePreviewScreen(
                             Text(
                                 text = "Summary:\n$summary",
                                 style = TextStyle(
-                                    fontSize = note.fontSize.sp, // 使用保存的字号
-                                    fontFamily = ReaderFont.getFontById(note.font).fontFamily // 使用保存的字体
+                                    fontSize = note.fontSize.sp, // use saved font size
+                                    fontFamily = ReaderFont.getFontById(note.font).fontFamily // use saved font style
                                 ),
                                 color = Color.Blue,
                                 modifier = Modifier.padding(bottom = 16.dp)

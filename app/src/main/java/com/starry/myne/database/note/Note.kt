@@ -34,14 +34,14 @@ data class Note(
     @ColumnInfo(name = "font") val font: String = ReaderFont.System.id, // 保存字体 ID，默认 System
     @ColumnInfo(name = "font_size") val fontSize: Int = 16)
 {
-    // 将 JSON 转换为 NoteEntry 列表
+    // switch JSON to NoteEntry list
     val entries: List<NoteEntry>
         get() = try {
             Json.decodeFromString(entriesJson)
         } catch (e: Exception) {
-            emptyList() // 解析失败返回空列表
+            emptyList()
         }
-    // 返回一个新对象，并更新 entriesJson
+    // update entriesJson
     fun withUpdatedEntries(newEntries: List<NoteEntry>): Note {
         return this.copy(entriesJson = Json.encodeToString(newEntries))
     }

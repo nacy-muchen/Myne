@@ -16,42 +16,46 @@ import java.io.FileOutputStream
 import java.net.URL
 
 object PdfExporter {
+    // Suspend function to export a note as a PDF to the specified file path
     suspend fun exportNoteAsPdf(note: Note, filePath: String, context: Context): Boolean {
         val pdfDocument = PdfDocument()
-        val pageWidth = 595 // A4 宽度 (8.5 x 11 inches, 72 PPI)
-        val pageHeight = 842 // A4 高度
-        val margin = 40 // 边距
+        // Define A4 paper size (in points, 72 PPI)
+        val pageWidth = 595
+        val pageHeight = 842 // A4 height
+        val margin = 40
 
+        // Initialize Paint object for text drawing
         val paint = Paint()
         paint.textSize = note.fontSize.toFloat()
         var yPosition = margin.toFloat()
 
-        // 加载背景图资源
+        // Load background image for the PDF
         val backgroundBitmap = BitmapFactory.decodeResource(context.resources, note.background)
 
-        // 创建页面
+        // Create a new page in the PDF document
         var currentPage = createNewPage(pdfDocument, pageWidth, pageHeight)
         var canvas = currentPage.canvas
 
-        // 绘制背景图
+        // Draw the background image onto the page
         canvas.drawBitmap(
             Bitmap.createScaledBitmap(backgroundBitmap, pageWidth, pageHeight, true),
             0f, 0f, null
         )
 
+        // Set the font type based on the note's font settings
         val fontFamily = ReaderFont.getFontById(note.font).fontFamily
         fontFamily?.let {
             paint.typeface = toTypeface(context)
         }
 
-        // 绘制标题
-        paint.textSize = (note.fontSize * 1.5).toFloat() // 标题比正文字体稍大
+        // Draw the title of the note, making it slightly larger than the body text
+        paint.textSize = (note.fontSize * 1.5).toFloat()
         paint.color = Color.BLACK
         paint.isFakeBoldText = true
         canvas.drawText(note.title, margin.toFloat(), yPosition, paint)
         yPosition += 40f
 
-        // 绘制内容
+        // Draw the body content of the note
         paint.textSize = note.fontSize.toFloat() // 设置正文字体大小
         paint.isFakeBoldText = false
 
@@ -59,17 +63,16 @@ object PdfExporter {
             val contentLines = splitTextIntoLines(entry.text, pageWidth - 2 * margin, paint)
             val thoughtLines = splitTextIntoLines(entry.thoughts, pageWidth - 2 * margin, paint)
 
-            // 绘制 Content
+            // Loop through each line of content
             paint.color = Color.BLACK
             for (line in contentLines) {
                 if (yPosition + 24 > pageHeight - margin) {
-                    // 换页逻辑
+                    // If the line doesn't fit, create a new page
                     pdfDocument.finishPage(currentPage)
                     currentPage = createNewPage(pdfDocument, pageWidth, pageHeight)
                     canvas = currentPage.canvas
                     yPosition = margin.toFloat()
 
-                    // 重新绘制背景图
                     canvas.drawBitmap(
                         Bitmap.createScaledBitmap(backgroundBitmap, pageWidth, pageHeight, true),
                         0f, 0f, null
@@ -79,17 +82,18 @@ object PdfExporter {
                 yPosition += 24f
             }
 
-            // 绘制 Thoughts
-            paint.color = 0xFF9C27B0.toInt() // 紫色
+            // Draw Thoughts (lines of text)
+            paint.color = 0xFF9C27B0.toInt()
             for (line in thoughtLines) {
+                // Check if the next line of text will overflow the current page
                 if (yPosition + 24 > pageHeight - margin) {
-                    // 换页逻辑
+                    // If so, finish the current page and create a new page
                     pdfDocument.finishPage(currentPage)
                     currentPage = createNewPage(pdfDocument, pageWidth, pageHeight)
                     canvas = currentPage.canvas
                     yPosition = margin.toFloat()
 
-                    // 重新绘制背景图
+                    // Redraw the background image on the new page
                     canvas.drawBitmap(
                         Bitmap.createScaledBitmap(backgroundBitmap, pageWidth, pageHeight, true),
                         0f, 0f, null
@@ -99,16 +103,19 @@ object PdfExporter {
                 yPosition += 24f
             }
 
-            // 绘制图片
+            // Draw image (if present)
             entry.imageUrl?.let { imageUrl ->
+                // Load the image from the URL
                 val bitmap = loadBitmapFromUrl(imageUrl)
                 bitmap?.let {
+                    // Check if the image will fit within the current page
                     if (yPosition + 220 > pageHeight - margin) {
                         pdfDocument.finishPage(currentPage)
                         currentPage = createNewPage(pdfDocument, pageWidth, pageHeight)
                         canvas = currentPage.canvas
                         yPosition = margin.toFloat()
 
+                        // Redraw the background image on the new page
                         canvas.drawBitmap(
                             Bitmap.createScaledBitmap(backgroundBitmap, pageWidth, pageHeight, true),
                             0f, 0f, null
@@ -121,8 +128,9 @@ object PdfExporter {
             }
         }
 
-        // 绘制摘要 (Summary)
+        // Draw Summary
         note.summary?.let { summary ->
+            // Check if the summary will fit on the current page
             if (yPosition + 80 > pageHeight - margin) {
                 pdfDocument.finishPage(currentPage)
                 currentPage = createNewPage(pdfDocument, pageWidth, pageHeight)
@@ -134,7 +142,7 @@ object PdfExporter {
                 )
             }
 
-            paint.textSize = (note.fontSize * 1.1).toFloat() // 摘要字体稍大
+            paint.textSize = (note.fontSize * 1.1).toFloat()
             paint.color = Color.BLUE
             paint.isFakeBoldText = true
             canvas.drawText("Summary:", margin.toFloat(), yPosition, paint)
@@ -161,10 +169,10 @@ object PdfExporter {
             yPosition += 40f
         }
 
-        // 结束当前页面
+        // end current page
         pdfDocument.finishPage(currentPage)
 
-        // 保存 PDF 到文件
+        // save PDF to files
         return try {
             val file = File(filePath)
             val outputStream = FileOutputStream(file)
@@ -179,11 +187,13 @@ object PdfExporter {
         }
     }
 
+    // Function to create a new page in the PDF document
     private fun createNewPage(pdfDocument: PdfDocument, pageWidth: Int, pageHeight: Int): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pdfDocument.pages.size + 1).create()
         return pdfDocument.startPage(pageInfo)
     }
 
+    // split text into lines
     private fun splitTextIntoLines(text: String, maxWidth: Int, paint: Paint): List<String> {
         val words = text.split(" ")
         val lines = mutableListOf<String>()
@@ -203,6 +213,8 @@ object PdfExporter {
         }
         return lines
     }
+
+    // Function to load an image from a URL
     private suspend fun loadBitmapFromUrl(imageUrl: String): Bitmap? {
         return withContext(Dispatchers.IO) {
             try {
