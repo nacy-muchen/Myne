@@ -16,9 +16,12 @@
 
 package com.starry.myne.ui.screens.reader.main.viewmodel
 
+import android.content.Context
+import android.graphics.Typeface
 import androidx.annotation.Keep
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.core.content.res.ResourcesCompat
 import com.starry.myne.R
 import com.starry.myne.ui.theme.poppinsFont
 
@@ -36,6 +39,8 @@ sealed class ReaderFont(val id: String, val name: String, val fontFamily: FontFa
         fun getFontById(id: String) = fontMap[id]!!
         fun getFontByName(name: String) = getAllFonts().find { it.name == name }!!
     }
+
+
 
     @Keep
     data object System : ReaderFont("system", "System Default", FontFamily.Default)
@@ -58,4 +63,19 @@ sealed class ReaderFont(val id: String, val name: String, val fontFamily: FontFa
 
     @Keep
     data object Lora : ReaderFont("poppins", "Poppins", poppinsFont)
+
+    /**
+     * Converts the FontFamily to an Android Typeface for use in Paint and PdfDocument.
+     */
+    fun toTypeface(context: Context): Typeface {
+        return when (this) {
+            System -> Typeface.DEFAULT
+            Serif -> Typeface.SERIF
+            Cursive -> Typeface.create("cursive", Typeface.NORMAL)
+            SansSerif -> Typeface.SANS_SERIF
+            Inter -> ResourcesCompat.getFont(context, R.font.reader_inter_font) ?: Typeface.DEFAULT
+            Dyslexic -> ResourcesCompat.getFont(context, R.font.reader_inter_font) ?: Typeface.DEFAULT
+            Lora -> ResourcesCompat.getFont(context, R.font.poppins_regular) ?: Typeface.DEFAULT
+        }
+    }
 }

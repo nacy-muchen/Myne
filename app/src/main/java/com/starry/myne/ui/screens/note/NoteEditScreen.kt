@@ -38,6 +38,7 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,23 +46,28 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import coil.compose.rememberImagePainter
 import com.starry.myne.R
 import com.starry.myne.database.note.NoteEntry
 import com.starry.myne.network.ImageGenerator
 import com.starry.myne.network.SummaryGenerator
+import com.starry.myne.ui.screens.reader.main.composables.ReaderFontChooserDialog
+import com.starry.myne.ui.screens.reader.main.viewmodel.ReaderFont
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-
+import androidx.compose.ui.text.TextStyle
 /**
  * Composable function to edit an existing note or create a new one.
  *
@@ -83,6 +89,9 @@ fun NoteEditScreen(
     var entries by remember { mutableStateOf(mutableListOf<NoteEntry>()) } // State to hold the list of note entries
     val snackBarHostState = remember { SnackbarHostState() } // State to manage Snackbar messages
     var showBackgroundPicker by remember { mutableStateOf(false) } // Controls the visibility of the background picker
+    val showFontDialog = remember { mutableStateOf(false) }
+    var selectedFont by remember { mutableStateOf<ReaderFont>(ReaderFont.System) }
+    var fontSize by remember { mutableStateOf(16) }
 
     // List of available background images
     val backgroundOptions = listOf(
@@ -116,6 +125,8 @@ fun NoteEditScreen(
             entries = Json.decodeFromString<List<NoteEntry>>(it.entriesJson)
                 .toMutableList()// Load the note entries
             selectedBackground = it.background// Set the selected background for the note
+            selectedFont = ReaderFont.getFontById(it.font) // 初始化字体
+            fontSize = it.fontSize // 初始化字号
         }
     }
 
@@ -217,6 +228,13 @@ fun NoteEditScreen(
                     }) {
                         Icon(Icons.Default.Visibility, contentDescription = "Preview")
                     }
+
+                    IconButton(onClick = { showFontDialog.value = true }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_reader_font),
+                            contentDescription = "Change Font"
+                        )
+                    }
                 }
             )
         },
@@ -227,6 +245,14 @@ fun NoteEditScreen(
                     .fillMaxSize()
                     .background(Color.White)// Background color for the content area
             ) {
+                ReaderFontChooserDialog(
+                    showFontDialog = showFontDialog,
+                    fontFamily = selectedFont,
+                    onFontFamilyChanged = { newFont ->
+                        selectedFont = newFont
+                    }
+                )
+
                 // Display selected background image
                 Image(
                     painter = painterResource(id = selectedBackground),
@@ -275,6 +301,10 @@ fun NoteEditScreen(
                         value = title,
                         onValueChange = { title = it },
                         label = { Text("Title") },
+                        textStyle = TextStyle(
+                            fontSize = fontSize.sp,
+                            fontFamily = selectedFont.fontFamily
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp)
@@ -308,7 +338,10 @@ fun NoteEditScreen(
                                 // Display the text of each entry
                                 Text(
                                     text = entry.text,
-                                    style = MaterialTheme.typography.body1,
+                                    style = TextStyle(
+                                        fontSize = fontSize.sp,
+                                        fontFamily = selectedFont.fontFamily
+                                    ),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(end = 8.dp)
@@ -425,6 +458,10 @@ fun NoteEditScreen(
                                             updatedEntries// Set the updated list as the new entries
                                     },
                                     label = { Text("Thought ${index + 1}") },
+                                    textStyle = TextStyle(
+                                        fontSize = fontSize.sp, // 动态设置字号
+                                        fontFamily = selectedFont.fontFamily // 动态设置字体
+                                    ),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -481,14 +518,20 @@ fun NoteEditScreen(
                         if (summary != null && !isGenerate.value) {
                             Text(
                                 text = "Summary:\n$summary",
-                                style = MaterialTheme.typography.body1,
+                                style = TextStyle(
+                                    fontSize = fontSize.sp,
+                                    fontFamily = selectedFont.fontFamily
+                                ),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
                             generatedSummary?.let {
                                 Text(
                                     text = "Summary:\n$it",
-                                    style = MaterialTheme.typography.body1,
+                                    style = TextStyle(
+                                        fontSize = fontSize.sp,
+                                        fontFamily = selectedFont.fontFamily
+                                    ),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -507,14 +550,16 @@ fun NoteEditScreen(
                                         val updatedNote = note.copy(
                                             title = title.text, // Update the title
                                             entriesJson = Json.encodeToString(entries),  // Serialize the updated entries to JSON
-                                            background = selectedBackground
+                                            background = selectedBackground,
+                                            font = selectedFont.id, // 保存字体 ID
+                                            fontSize = fontSize // 保存字号
                                         )
                                         val updatedSummary = generatedSummary
-                                        if (noteId != null) {
-                                            if (updatedSummary != null) {
-                                                viewModel.updateSummary(noteId, updatedSummary)
-                                            }
+
+                                        if (updatedSummary != null) {
+                                            viewModel.updateSummary(noteId, updatedSummary)
                                         }
+
                                         // Update the note in the ViewModel
                                         viewModel.updateNote(updatedNote)
                                         snackBarHostState.showSnackbar("Saved")// Show a Snackbar indicating the note is saved
@@ -530,7 +575,27 @@ fun NoteEditScreen(
 
                     }
 
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilledTonalButton(onClick = { if (fontSize > 12) fontSize -= 2 }) {
+                            Text("-")
+                        }
+                        Text(
+                            text = "$fontSize sp",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            fontSize = 16.sp
+                        )
+                        FilledTonalButton(onClick = { if (fontSize < 32) fontSize += 2 }) {
+                            Text("+")
+                        }
+                    }
                 }
+
             }
         }
 

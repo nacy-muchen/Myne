@@ -1,5 +1,7 @@
 package com.starry.myne.ui.screens.note
 
+import android.os.Environment
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,12 +22,21 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
+import com.starry.myne.PDFExport.PdfExporter
+import com.starry.myne.ui.screens.reader.main.viewmodel.ReaderFont
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -33,6 +44,9 @@ fun NotePreviewScreen(
     navController: NavController,
     noteId: Long? = null
 ) {
+
+    val context = LocalContext.current
+
     // Get the ViewModel using Hilt
     val viewModel: NoteViewModel = hiltViewModel()
     // Observe all notes from the ViewModel
@@ -49,6 +63,25 @@ fun NotePreviewScreen(
                     // Back button to pop the navigation stack
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    // 添加导出按钮
+                    note?.let {
+                        IconButton(onClick = {
+                            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                            val filePath = "${downloadsDir.absolutePath}/${note.title}.pdf"
+                            CoroutineScope(Dispatchers.Main).launch {
+                                val success = PdfExporter.exportNoteAsPdf(it, filePath, context)
+                                if (success) {
+                                    Toast.makeText(context, "export PDF successfully: $filePath", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "fail to export PDF", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Default.Save, contentDescription = "Export as PDF")
+                        }
                     }
                 }
             )
@@ -80,7 +113,10 @@ fun NotePreviewScreen(
                         // Display the note's title
                         Text(
                             text = it.title,
-                            style = MaterialTheme.typography.h4,
+                            style = TextStyle(
+                                fontSize = note.fontSize.sp, // 使用保存的字号
+                                fontFamily = ReaderFont.getFontById(note.font).fontFamily // 使用保存的字体
+                            ),
                             color = Color.Black,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
@@ -90,15 +126,20 @@ fun NotePreviewScreen(
                             // Display entry text
                             Text(
                                 text = entry.text,
-                                style = MaterialTheme.typography.body1,
-                                color = Color.Black,
+                                style = TextStyle(
+                                    fontSize = note.fontSize.sp, // 使用保存的字号
+                                    fontFamily = ReaderFont.getFontById(note.font).fontFamily // 使用保存的字体
+                                ),                                color = Color.Black,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
 
                             // Display entry thoughts with a different color
                             Text(
                                 text = entry.thoughts,
-                                style = MaterialTheme.typography.body1,
+                                style = TextStyle(
+                                    fontSize = note.fontSize.sp, // 使用保存的字号
+                                    fontFamily = ReaderFont.getFontById(note.font).fontFamily // 使用保存的字体
+                                ),
                                 color = Color(0xFF9C27B0),
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
@@ -120,7 +161,10 @@ fun NotePreviewScreen(
                         it.summary?.let { summary ->
                             Text(
                                 text = "Summary:\n$summary",
-                                style = MaterialTheme.typography.body1,
+                                style = TextStyle(
+                                    fontSize = note.fontSize.sp, // 使用保存的字号
+                                    fontFamily = ReaderFont.getFontById(note.font).fontFamily // 使用保存的字体
+                                ),
                                 color = Color.Blue,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )

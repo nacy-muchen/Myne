@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 import com.google.gson.reflect.TypeToken
 import com.google.gson.Gson
 import com.starry.myne.R
+import com.starry.myne.ui.screens.reader.main.viewmodel.ReaderFont
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -29,7 +30,9 @@ data class Note(
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "entries") val entriesJson: String,
     @ColumnInfo(name = "background") val background: Int = R.drawable.p1,
-    @ColumnInfo(name = "summary") val summary: String? = null )
+    @ColumnInfo(name = "summary") val summary: String? = null,
+    @ColumnInfo(name = "font") val font: String = ReaderFont.System.id, // 保存字体 ID，默认 System
+    @ColumnInfo(name = "font_size") val fontSize: Int = 16)
 {
     // 将 JSON 转换为 NoteEntry 列表
     val entries: List<NoteEntry>
